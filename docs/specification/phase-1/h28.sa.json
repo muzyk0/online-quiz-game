@@ -1,0 +1,846 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "h28.sa API - V1",
+    "description": "No changes",
+    "version": "h28.sa"
+  },
+  "paths": {
+    "/hometask_28/api/sa/quiz/questions": {
+      "get": {
+        "tags": [
+          "QuizQuestions"
+        ],
+        "summary": "Returns all questions with pagination and filtering",
+        "parameters": [
+          {
+            "name": "bodySearchTerm",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "publishedStatus",
+            "in": "query",
+            "description": "default value: \"all\"",
+            "schema": {
+              "$ref": "#/components/schemas/h25.sa.PublishedStatuses"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "createdAt"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "description": "Default value: desc",
+            "schema": {
+              "$ref": "#/components/schemas/h04.SortDirections"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "pageNumber is number of portions that should be returned",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize is portions size that should be returned",
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h25.sa.QuestionViewModel>"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h25.sa.QuestionViewModel>"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h25.sa.QuestionViewModel>"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "basic": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:basic"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "QuizQuestions"
+        ],
+        "summary": "Create question",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.sa.QuestionInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.sa.QuestionInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.sa.QuestionInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.sa.QuestionViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.sa.QuestionViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.sa.QuestionViewModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the inputModel has incorrect values",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "basic": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:basic"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/sa/quiz/questions/{id}": {
+      "delete": {
+        "tags": [
+          "QuizQuestions"
+        ],
+        "summary": "Delete question",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "basic": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:basic"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "QuizQuestions"
+        ],
+        "summary": "Update question",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.sa.QuestionInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.sa.QuestionInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.sa.QuestionInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "If the inputModel has incorrect values or property 'correctAnswers' are not passed but property 'published' is true",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "basic": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:basic"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/sa/quiz/questions/{id}/publish": {
+      "put": {
+        "tags": [
+          "QuizQuestions"
+        ],
+        "summary": "Publish/unpublish question",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.sa.PublishInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.sa.PublishInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.sa.PublishInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "If the inputModel has incorrect values or specified question doesn't have correct answers",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "basic": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:basic"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/sa/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Returns all users",
+        "parameters": [
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "createdAt"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "description": "Default value: desc",
+            "schema": {
+              "$ref": "#/components/schemas/h04.SortDirections"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "pageNumber is number of portions that should be returned",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize is portions size that should be returned",
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "searchLoginTerm",
+            "in": "query",
+            "description": "Search term for user Login: Login should contains this term in any position",
+            "schema": {
+              "type": "string",
+              "default": null
+            }
+          },
+          {
+            "name": "searchEmailTerm",
+            "in": "query",
+            "description": "Search term for user Email: Email should contains this term in any position",
+            "schema": {
+              "type": "string",
+              "default": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h05.db.UserViewModel>"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h05.db.UserViewModel>"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h05.db.UserViewModel>"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "basic": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:basic"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Add new user to the system",
+        "requestBody": {
+          "description": "Data for constructing new user",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.UserInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.UserInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.UserInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Returns the newly created user",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h05.db.UserViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h05.db.UserViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h05.db.UserViewModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the inputModel has incorrect values. \r\n            <br /><br /><i>Note: If the error should be in the BLL, for example, \"the email address is not unique\", \r\n            do not try to mix this error with input validation errors in the middleware, \r\n            just return one element in the errors array</i>",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "basic": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:basic"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/sa/users/{id}": {
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete user specified by id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "If specified user is not exists"
+          }
+        },
+        "security": [
+          {
+            "basic": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:basic"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIErrorResult": {
+        "type": "object",
+        "properties": {
+          "errorsMessages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FieldError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Message with error explanation for certain field",
+            "nullable": true
+          },
+          "field": {
+            "type": "string",
+            "description": "What field/property of input model has error",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Paginator<h05.db.UserViewModel>": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "pagesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/h05.db.UserViewModel"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Paginator<h25.sa.QuestionViewModel>": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "pagesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/h25.sa.QuestionViewModel"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "h04.SortDirections": {
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "type": "string"
+      },
+      "h05.db.UserInputModel": {
+        "required": [
+          "email",
+          "login",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "login": {
+            "maxLength": 10,
+            "minLength": 3,
+            "pattern": "^[a-zA-Z0-9_-]*$",
+            "type": "string",
+            "description": "must be unique"
+          },
+          "password": {
+            "maxLength": 20,
+            "minLength": 6,
+            "type": "string"
+          },
+          "email": {
+            "pattern": "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+            "type": "string",
+            "description": "must be unique",
+            "example": "example@example.dev"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h05.db.UserViewModel": {
+        "required": [
+          "createdAt",
+          "email",
+          "id",
+          "login"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "login": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.sa.PublishInputModel": {
+        "type": "object",
+        "properties": {
+          "published": {
+            "type": "boolean",
+            "description": "True if question is completed and can be used in the Quiz game"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.sa.PublishedStatuses": {
+        "enum": [
+          "all",
+          "published",
+          "notPublished"
+        ],
+        "type": "string"
+      },
+      "h25.sa.QuestionInputModel": {
+        "required": [
+          "body",
+          "correctAnswers"
+        ],
+        "type": "object",
+        "properties": {
+          "body": {
+            "maxLength": 500,
+            "minLength": 10,
+            "type": "string"
+          },
+          "correctAnswers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All variants of possible correct answers for current questions\r\nExamples: ['6', 'six', 'шесть', 'дофига']\r\nIn Postgres save this data in JSON column"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.sa.QuestionViewModel": {
+        "required": [
+          "body",
+          "correctAnswers",
+          "createdAt",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "Text of question, for example: How many continents are there?"
+          },
+          "correctAnswers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All variants of possible correct answers for current questions\r\nExamples: ['6', 'six', 'шесть', 'дофига']\r\nIn Postgres save this data in JSON column"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "If question is completed and can be used in the Quiz game",
+            "default": "false"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "description": "Enter JWT Bearer token **_only_**",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "basic": {
+        "type": "http",
+        "scheme": "basic"
+      },
+      "refreshToken": {
+        "type": "apiKey",
+        "description": "JWT refreshToken inside cookie. Must be correct, and must not expire",
+        "name": "refreshToken",
+        "in": "cookie"
+      }
+    }
+  }
+}

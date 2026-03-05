@@ -1,0 +1,1070 @@
+basePath: /api
+definitions:
+  github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.ChangeEmailRequest:
+    properties:
+      current_password:
+        minLength: 6
+        type: string
+      new_email:
+        type: string
+    required:
+    - current_password
+    - new_email
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.ChangePasswordRequest:
+    properties:
+      current_password:
+        minLength: 6
+        type: string
+      new_password:
+        minLength: 6
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.MeResponse:
+    properties:
+      email:
+        type: string
+      login:
+        type: string
+      userId:
+        type: string
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.MessageResponse:
+    properties:
+      message:
+        type: string
+    required:
+    - message
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.RefreshResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    required:
+    - accessToken
+    - refreshToken
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.AnswerRequest:
+    properties:
+      answer:
+        type: string
+    required:
+    - answer
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.AnswerViewResponse:
+    properties:
+      addedAt:
+        type: string
+      answerStatus:
+        type: string
+      questionId:
+        type: string
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.GameResponse:
+    properties:
+      finishGameDate:
+        type: string
+      firstPlayerProgress:
+        $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.PlayerProgressResponse'
+      id:
+        type: string
+      pairCreatedDate:
+        type: string
+      questions:
+        items:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.QuestionViewResponse'
+        type: array
+      secondPlayerProgress:
+        $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.PlayerProgressResponse'
+      startGameDate:
+        type: string
+      status:
+        type: string
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.PlayerInfoResponse:
+    properties:
+      id:
+        type: string
+      login:
+        type: string
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.PlayerProgressResponse:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.AnswerViewResponse'
+        type: array
+      player:
+        $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.PlayerInfoResponse'
+      score:
+        type: integer
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.QuestionViewResponse:
+    properties:
+      body:
+        type: string
+      id:
+        type: string
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.CreateQuestionRequest:
+    properties:
+      body:
+        maxLength: 500
+        minLength: 10
+        type: string
+      correctAnswers:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - body
+    - correctAnswers
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.PaginatedQuestionsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.QuestionResponse'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      pagesCount:
+        type: integer
+      totalCount:
+        type: integer
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.PublishQuestionRequest:
+    properties:
+      published:
+        type: boolean
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.QuestionResponse:
+    properties:
+      body:
+        type: string
+      correctAnswers:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: string
+      published:
+        type: boolean
+      updatedAt:
+        type: string
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.UpdateQuestionRequest:
+    properties:
+      body:
+        maxLength: 500
+        minLength: 10
+        type: string
+      correctAnswers:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - body
+    - correctAnswers
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.AuthResponse:
+    properties:
+      accessToken:
+        description: Access token (short-lived, 15 minutes)
+        type: string
+      refreshToken:
+        description: Refresh token (long-lived, 7 days) - also set as httpOnly cookie
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.UserResponse'
+        description: User information
+    required:
+    - accessToken
+    - refreshToken
+    - user
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.LoginRequest:
+    properties:
+      loginOrEmail:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - loginOrEmail
+    - password
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.RegisterRequest:
+    properties:
+      avatar_url:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.UpdateProfileRequest:
+    properties:
+      avatar_url:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.UserResponse:
+    properties:
+      avatar_url:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+    required:
+    - email
+    - id
+    type: object
+  github_com_muzyk0_online-quiz-game_internal_pkg_apperrors.AppError:
+    properties:
+      details:
+        additionalProperties:
+          type: string
+        description: Details contains field-level validation errors (optional).
+        type: object
+      error:
+        description: Message is the safe message sent to the client.
+        type: string
+    type: object
+  internal_domain_health_delivery_http.HealthResponse:
+    properties:
+      checks:
+        additionalProperties:
+          type: string
+        type: object
+      error:
+        type: string
+      status:
+        type: string
+    required:
+    - status
+    type: object
+  internal_domain_user_delivery_http.SAErrorResponse:
+    properties:
+      errorsMessages:
+        items:
+          $ref: '#/definitions/internal_domain_user_delivery_http.SAFieldError'
+        type: array
+    type: object
+  internal_domain_user_delivery_http.SAFieldError:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  internal_domain_user_delivery_http.SAPaginatedUsersResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_domain_user_delivery_http.SAUserViewModel'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      pagesCount:
+        type: integer
+      totalCount:
+        type: integer
+    type: object
+  internal_domain_user_delivery_http.SAUserInputModel:
+    properties:
+      email:
+        type: string
+      login:
+        maxLength: 10
+        minLength: 3
+        type: string
+      password:
+        maxLength: 20
+        minLength: 6
+        type: string
+    required:
+    - email
+    - login
+    - password
+    type: object
+  internal_domain_user_delivery_http.SAUserViewModel:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      login:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: |-
+    A RESTful API for a pair-based online quiz game.
+    Players compete head-to-head answering 5 questions. Super admin manages questions and users.
+  title: Online Quiz Game API
+  version: "1.0"
+paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate with email and password, return access and refresh
+        tokens
+      parameters:
+      - description: Login request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.AuthResponse'
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - Users
+  /api/auth/me:
+    get:
+      description: Returns email, login and userId of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.MeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user info
+      tags:
+      - Authentication
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account and return access and refresh tokens
+      parameters:
+      - description: Registration request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.AuthResponse'
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Email already in use
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - Users
+  /api/pair-game-quiz/pairs/{id}:
+    get:
+      description: Returns the game in any status. The calling user must be a participant.
+      parameters:
+      - description: Game ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.GameResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a game by ID
+      tags:
+      - Quiz/Game
+  /api/pair-game-quiz/pairs/connection:
+    post:
+      description: If a pending game exists the calling user is added as second player
+        and the game starts. Otherwise a new pending game is created.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.GameResponse'
+        "403":
+          description: Already in an active game
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Join or create a quiz game
+      tags:
+      - Quiz/Game
+  /api/pair-game-quiz/pairs/my-current:
+    get:
+      description: Returns the game in status PendingSecondPlayer or Active. Returns
+        404 when no active game.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.GameResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get the calling user's current active game
+      tags:
+      - Quiz/Game
+  /api/pair-game-quiz/pairs/my-current/answers:
+    post:
+      consumes:
+      - application/json
+      description: Submits an answer to the next unanswered question in the current
+        active game. One attempt per question. Sequential order.
+      parameters:
+      - description: Answer
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.AnswerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.GameResponse'
+        "403":
+          description: No active game or all questions answered
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_game_delivery_http_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Submit an answer for the current question
+      tags:
+      - Quiz/Game
+  /api/protected/account:
+    delete:
+      description: Permanently delete the authenticated user's account
+      responses:
+        "204":
+          description: Account deleted
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete current user account
+      tags:
+      - Users
+  /api/protected/profile:
+    get:
+      description: Return the authenticated user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update the authenticated user's first name, last name, or avatar
+        URL
+      parameters:
+      - description: Profile update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user profile
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_user_delivery_http_dto.UserResponse'
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update current user profile
+      tags:
+      - Users
+  /api/sa/quiz/questions:
+    get:
+      parameters:
+      - description: Search term in body
+        in: query
+        name: bodySearchTerm
+        type: string
+      - description: 'all | published | notPublished (default: all)'
+        in: query
+        name: publishedStatus
+        type: string
+      - description: 'createdAt | updatedAt | body (default: createdAt)'
+        in: query
+        name: sortBy
+        type: string
+      - description: 'asc | desc (default: desc)'
+        in: query
+        name: sortDirection
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: pageNumber
+        type: integer
+      - description: Page size 1-20 (default 10)
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.PaginatedQuestionsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: List quiz questions (SA)
+      tags:
+      - SA/Questions
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Question data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.CreateQuestionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.QuestionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Create a quiz question (SA)
+      tags:
+      - SA/Questions
+  /api/sa/quiz/questions/{id}:
+    delete:
+      parameters:
+      - description: Question ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Delete a quiz question (SA)
+      tags:
+      - SA/Questions
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Question ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Question data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.UpdateQuestionRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Update a quiz question (SA)
+      tags:
+      - SA/Questions
+  /api/sa/quiz/questions/{id}/publish:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Question ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Publish flag
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.PublishQuestionRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_question_delivery_http_dto.ErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Publish or unpublish a quiz question (SA)
+      tags:
+      - SA/Questions
+  /api/sa/users:
+    get:
+      parameters:
+      - description: 'createdAt | login | email (default: createdAt)'
+        in: query
+        name: sortBy
+        type: string
+      - description: 'asc | desc (default: desc)'
+        in: query
+        name: sortDirection
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: pageNumber
+        type: integer
+      - description: Page size 1-20 (default 10)
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by login (contains)
+        in: query
+        name: searchLoginTerm
+        type: string
+      - description: Search by email (contains)
+        in: query
+        name: searchEmailTerm
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_domain_user_delivery_http.SAPaginatedUsersResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_domain_user_delivery_http.SAErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Returns all users (SA)
+      tags:
+      - SA/Users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_user_delivery_http.SAUserInputModel'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_domain_user_delivery_http.SAUserViewModel'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_domain_user_delivery_http.SAErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_domain_user_delivery_http.SAErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Add new user to the system (SA)
+      tags:
+      - SA/Users
+  /api/sa/users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_domain_user_delivery_http.SAErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_domain_user_delivery_http.SAErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Delete user by ID (SA)
+      tags:
+      - SA/Users
+  /api/testing/all-data:
+    delete:
+      description: Truncates all application tables. For testing purposes only.
+      responses:
+        "204":
+          description: All data deleted
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_pkg_apperrors.AppError'
+      summary: Delete all data
+      tags:
+      - Testing
+  /auth/change-email:
+    post:
+      consumes:
+      - application/json
+      description: Change the authenticated user's email address with password verification.
+        Requires current password to prevent unauthorized changes.
+      parameters:
+      - description: Email change request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.ChangeEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email changed successfully
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.MessageResponse'
+        "400":
+          description: Invalid request body or validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized or incorrect password
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Email already in use
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change user email
+      tags:
+      - Authentication
+  /auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Change the authenticated user's password with current password
+        verification. This will invalidate all existing sessions except the current
+        one.
+      parameters:
+      - description: Password change request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password changed successfully
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.MessageResponse'
+        "400":
+          description: Invalid request body or validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized or incorrect password
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change user password
+      tags:
+      - Authentication
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Clear refresh token cookie and invalidate session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.MessageResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Authentication
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Exchange refresh token for a new access token. Accepts refresh
+        token via httpOnly cookie (web clients) or Authorization Bearer header (mobile
+        clients). Implements token rotation - returns new refresh token on success.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            $ref: '#/definitions/github_com_muzyk0_online-quiz-game_internal_domain_auth_delivery_http_dto.RefreshResponse'
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
+      tags:
+      - Authentication
+  /healthz:
+    get:
+      description: Performs a health check of the application and its dependencies
+        (database)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Application is healthy
+          schema:
+            $ref: '#/definitions/internal_domain_health_delivery_http.HealthResponse'
+        "503":
+          description: Application is unhealthy
+          schema:
+            $ref: '#/definitions/internal_domain_health_delivery_http.HealthResponse'
+      summary: Health check endpoint
+      tags:
+      - Health
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,34 @@
+package helpers
+
+import (
+	"net/http"
+
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/labstack/echo/v4"
+)
+
+// ParseUUID parses a string into pgtype.UUID.
+// Returns echo.HTTPError if parsing fails.
+func ParseUUID(c echo.Context, uuidStr string) (pgtype.UUID, error) {
+	var uuid pgtype.UUID
+	if err := uuid.Scan(uuidStr); err != nil {
+		return uuid, echo.NewHTTPError(http.StatusBadRequest, "Invalid UUID format")
+	}
+	return uuid, nil
+}
+
+// MustParseUUID parses a string into pgtype.UUID without returning HTTP error.
+// Useful when you need just the UUID value and will handle errors separately.
+// Returns invalid UUID (Valid=false) if parsing fails.
+//
+// Example usage:
+//
+//	userID := helpers.MustParseUUID(userIDStr)
+//	if !userID.Valid {
+//	    // Handle error
+//	}
+func MustParseUUID(uuidStr string) pgtype.UUID {
+	var uuid pgtype.UUID
+	_ = uuid.Scan(uuidStr)
+	return uuid
+}
