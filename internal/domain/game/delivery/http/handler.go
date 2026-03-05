@@ -2,6 +2,7 @@ package http
 
 import (
 	nethttp "net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -82,6 +83,71 @@ func (h *Handler) GetByID(c echo.Context) error {
 	return c.JSON(nethttp.StatusOK, dto.FromServiceView(view))
 }
 
+// GetMyGames godoc
+//
+//	@Summary		Get all games of the current user (paginated)
+//	@Tags			Quiz/Game
+//	@Produce		json
+//	@Param			sortBy			query	string	false	"Field to sort by (default: pairCreatedDate)"
+//	@Param			sortDirection	query	string	false	"asc | desc (default: desc)"
+//	@Param			pageNumber		query	int		false	"Page number (default: 1)"
+//	@Param			pageSize		query	int		false	"Page size 1-20 (default: 10)"
+//	@Success		200	{object}	dto.PaginatedGamesResponse
+//	@Security		BearerAuth
+//	@Router			/api/pair-game-quiz/pairs/my [get]
+func (h *Handler) GetMyGames(c echo.Context) error {
+	playerID := auth.MustGetUserID(c)
+
+	input := service.MyGamesInput{
+		SortBy:        queryParamOrDefault(c, "sortBy", "pairCreatedDate"),
+		SortDirection: queryParamOrDefault(c, "sortDirection", "desc"),
+		PageNumber:    queryIntOrDefault(c, "pageNumber", 1),
+		PageSize:      queryIntOrDefault(c, "pageSize", 10),
+	}
+
+	result, err := h.svc.GetMyGames(c.Request().Context(), playerID, input)
+	if err != nil {
+		return mapGameError(err)
+	}
+
+	items := make([]*dto.GameResponse, len(result.Items))
+	for i, v := range result.Items {
+		items[i] = dto.FromServiceView(v)
+	}
+	return c.JSON(nethttp.StatusOK, dto.PaginatedGamesResponse{
+		PagesCount: result.PagesCount,
+		Page:       result.Page,
+		PageSize:   result.PageSize,
+		TotalCount: result.TotalCount,
+		Items:      items,
+	})
+}
+
+// GetMyStatistic godoc
+//
+//	@Summary		Get current user's game statistics
+//	@Tags			Quiz/Game
+//	@Produce		json
+//	@Success		200	{object}	dto.StatisticResponse
+//	@Security		BearerAuth
+//	@Router			/api/pair-game-quiz/users/my-statistic [get]
+func (h *Handler) GetMyStatistic(c echo.Context) error {
+	playerID := auth.MustGetUserID(c)
+
+	stats, err := h.svc.GetMyStatistic(c.Request().Context(), playerID)
+	if err != nil {
+		return mapGameError(err)
+	}
+	return c.JSON(nethttp.StatusOK, dto.StatisticResponse{
+		SumScore:    stats.SumScore,
+		AvgScores:   stats.AvgScores,
+		GamesCount:  stats.GamesCount,
+		WinsCount:   stats.WinsCount,
+		LossesCount: stats.LossesCount,
+		DrawsCount:  stats.DrawsCount,
+	})
+}
+
 // SubmitAnswer godoc
 //
 //	@Summary		Submit an answer for the current question
@@ -118,4 +184,24 @@ func (h *Handler) SubmitAnswer(c echo.Context) error {
 		AnswerStatus: answerStatus,
 		AddedAt:      result.AddedAt,
 	})
+}
+
+func queryParamOrDefault(c echo.Context, key, def string) string {
+	v := c.QueryParam(key)
+	if v == "" {
+		return def
+	}
+	return v
+}
+
+func queryIntOrDefault(c echo.Context, key string, def int) int {
+	v := c.QueryParam(key)
+	if v == "" {
+		return def
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return def
+	}
+	return n
 }

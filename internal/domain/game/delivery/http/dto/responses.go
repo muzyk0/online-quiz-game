@@ -51,6 +51,25 @@ type GameResponse struct {
 	FinishGameDate       *time.Time              `json:"finishGameDate"`
 }
 
+// PaginatedGamesResponse is the paginated list of games.
+type PaginatedGamesResponse struct {
+	PagesCount int             `json:"pagesCount"`
+	Page       int             `json:"page"`
+	PageSize   int             `json:"pageSize"`
+	TotalCount int             `json:"totalCount"`
+	Items      []*GameResponse `json:"items"`
+}
+
+// StatisticResponse is the current user's statistic across finished games.
+type StatisticResponse struct {
+	SumScore    int     `json:"sumScore"`
+	AvgScores   float64 `json:"avgScores"`
+	GamesCount  int     `json:"gamesCount"`
+	WinsCount   int     `json:"winsCount"`
+	LossesCount int     `json:"lossesCount"`
+	DrawsCount  int     `json:"drawsCount"`
+}
+
 // ErrorResponse is a generic error body.
 type ErrorResponse struct {
 	Error string `json:"error"`

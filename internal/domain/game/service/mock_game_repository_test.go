@@ -42,6 +42,9 @@ var _ repository.GameRepositoryInterface = &GameRepositoryInterfaceMock{}
 //			GetActiveByPlayerIDFunc: func(ctx context.Context, playerID pgtype.UUID) (*models.QuizGame, error) {
 //				panic("mock out the GetActiveByPlayerID method")
 //			},
+//			GetAllByPlayerIDFunc: func(ctx context.Context, playerID pgtype.UUID, filter repository.GameListFilter) ([]*models.QuizGame, int, error) {
+//				panic("mock out the GetAllByPlayerID method")
+//			},
 //			GetByIDFunc: func(ctx context.Context, id pgtype.UUID) (*models.QuizGame, error) {
 //				panic("mock out the GetByID method")
 //			},
@@ -50,6 +53,9 @@ var _ repository.GameRepositoryInterface = &GameRepositoryInterfaceMock{}
 //			},
 //			GetPlayerAnswersFunc: func(ctx context.Context, gameID pgtype.UUID, playerID pgtype.UUID) ([]*models.QuizGameAnswer, error) {
 //				panic("mock out the GetPlayerAnswers method")
+//			},
+//			GetStatsByPlayerIDFunc: func(ctx context.Context, playerID pgtype.UUID) (*repository.PlayerStats, error) {
+//				panic("mock out the GetStatsByPlayerID method")
 //			},
 //			IsPlayerInActiveGameFunc: func(ctx context.Context, playerID pgtype.UUID) (bool, error) {
 //				panic("mock out the IsPlayerInActiveGame method")
@@ -88,6 +94,9 @@ type GameRepositoryInterfaceMock struct {
 	// GetActiveByPlayerIDFunc mocks the GetActiveByPlayerID method.
 	GetActiveByPlayerIDFunc func(ctx context.Context, playerID pgtype.UUID) (*models.QuizGame, error)
 
+	// GetAllByPlayerIDFunc mocks the GetAllByPlayerID method.
+	GetAllByPlayerIDFunc func(ctx context.Context, playerID pgtype.UUID, filter repository.GameListFilter) ([]*models.QuizGame, int, error)
+
 	// GetByIDFunc mocks the GetByID method.
 	GetByIDFunc func(ctx context.Context, id pgtype.UUID) (*models.QuizGame, error)
 
@@ -96,6 +105,9 @@ type GameRepositoryInterfaceMock struct {
 
 	// GetPlayerAnswersFunc mocks the GetPlayerAnswers method.
 	GetPlayerAnswersFunc func(ctx context.Context, gameID pgtype.UUID, playerID pgtype.UUID) ([]*models.QuizGameAnswer, error)
+
+	// GetStatsByPlayerIDFunc mocks the GetStatsByPlayerID method.
+	GetStatsByPlayerIDFunc func(ctx context.Context, playerID pgtype.UUID) (*repository.PlayerStats, error)
 
 	// IsPlayerInActiveGameFunc mocks the IsPlayerInActiveGame method.
 	IsPlayerInActiveGameFunc func(ctx context.Context, playerID pgtype.UUID) (bool, error)
@@ -165,6 +177,15 @@ type GameRepositoryInterfaceMock struct {
 			// PlayerID is the playerID argument value.
 			PlayerID pgtype.UUID
 		}
+		// GetAllByPlayerID holds details about calls to the GetAllByPlayerID method.
+		GetAllByPlayerID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// PlayerID is the playerID argument value.
+			PlayerID pgtype.UUID
+			// Filter is the filter argument value.
+			Filter repository.GameListFilter
+		}
 		// GetByID holds details about calls to the GetByID method.
 		GetByID []struct {
 			// Ctx is the ctx argument value.
@@ -185,6 +206,13 @@ type GameRepositoryInterfaceMock struct {
 			Ctx context.Context
 			// GameID is the gameID argument value.
 			GameID pgtype.UUID
+			// PlayerID is the playerID argument value.
+			PlayerID pgtype.UUID
+		}
+		// GetStatsByPlayerID holds details about calls to the GetStatsByPlayerID method.
+		GetStatsByPlayerID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// PlayerID is the playerID argument value.
 			PlayerID pgtype.UUID
 		}
@@ -217,9 +245,11 @@ type GameRepositoryInterfaceMock struct {
 	lockCreatePending             sync.RWMutex
 	lockFindPending               sync.RWMutex
 	lockGetActiveByPlayerID       sync.RWMutex
+	lockGetAllByPlayerID          sync.RWMutex
 	lockGetByID                   sync.RWMutex
 	lockGetGameQuestions          sync.RWMutex
 	lockGetPlayerAnswers          sync.RWMutex
+	lockGetStatsByPlayerID        sync.RWMutex
 	lockIsPlayerInActiveGame      sync.RWMutex
 	lockSaveAnswer                sync.RWMutex
 	lockUpdateScoresAndFinish     sync.RWMutex
@@ -493,6 +523,46 @@ func (mock *GameRepositoryInterfaceMock) GetActiveByPlayerIDCalls() []struct {
 	return calls
 }
 
+// GetAllByPlayerID calls GetAllByPlayerIDFunc.
+func (mock *GameRepositoryInterfaceMock) GetAllByPlayerID(ctx context.Context, playerID pgtype.UUID, filter repository.GameListFilter) ([]*models.QuizGame, int, error) {
+	if mock.GetAllByPlayerIDFunc == nil {
+		panic("GameRepositoryInterfaceMock.GetAllByPlayerIDFunc: method is nil but GameRepositoryInterface.GetAllByPlayerID was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		PlayerID pgtype.UUID
+		Filter   repository.GameListFilter
+	}{
+		Ctx:      ctx,
+		PlayerID: playerID,
+		Filter:   filter,
+	}
+	mock.lockGetAllByPlayerID.Lock()
+	mock.calls.GetAllByPlayerID = append(mock.calls.GetAllByPlayerID, callInfo)
+	mock.lockGetAllByPlayerID.Unlock()
+	return mock.GetAllByPlayerIDFunc(ctx, playerID, filter)
+}
+
+// GetAllByPlayerIDCalls gets all the calls that were made to GetAllByPlayerID.
+// Check the length with:
+//
+//	len(mockedGameRepositoryInterface.GetAllByPlayerIDCalls())
+func (mock *GameRepositoryInterfaceMock) GetAllByPlayerIDCalls() []struct {
+	Ctx      context.Context
+	PlayerID pgtype.UUID
+	Filter   repository.GameListFilter
+} {
+	var calls []struct {
+		Ctx      context.Context
+		PlayerID pgtype.UUID
+		Filter   repository.GameListFilter
+	}
+	mock.lockGetAllByPlayerID.RLock()
+	calls = mock.calls.GetAllByPlayerID
+	mock.lockGetAllByPlayerID.RUnlock()
+	return calls
+}
+
 // GetByID calls GetByIDFunc.
 func (mock *GameRepositoryInterfaceMock) GetByID(ctx context.Context, id pgtype.UUID) (*models.QuizGame, error) {
 	if mock.GetByIDFunc == nil {
@@ -602,6 +672,42 @@ func (mock *GameRepositoryInterfaceMock) GetPlayerAnswersCalls() []struct {
 	mock.lockGetPlayerAnswers.RLock()
 	calls = mock.calls.GetPlayerAnswers
 	mock.lockGetPlayerAnswers.RUnlock()
+	return calls
+}
+
+// GetStatsByPlayerID calls GetStatsByPlayerIDFunc.
+func (mock *GameRepositoryInterfaceMock) GetStatsByPlayerID(ctx context.Context, playerID pgtype.UUID) (*repository.PlayerStats, error) {
+	if mock.GetStatsByPlayerIDFunc == nil {
+		panic("GameRepositoryInterfaceMock.GetStatsByPlayerIDFunc: method is nil but GameRepositoryInterface.GetStatsByPlayerID was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		PlayerID pgtype.UUID
+	}{
+		Ctx:      ctx,
+		PlayerID: playerID,
+	}
+	mock.lockGetStatsByPlayerID.Lock()
+	mock.calls.GetStatsByPlayerID = append(mock.calls.GetStatsByPlayerID, callInfo)
+	mock.lockGetStatsByPlayerID.Unlock()
+	return mock.GetStatsByPlayerIDFunc(ctx, playerID)
+}
+
+// GetStatsByPlayerIDCalls gets all the calls that were made to GetStatsByPlayerID.
+// Check the length with:
+//
+//	len(mockedGameRepositoryInterface.GetStatsByPlayerIDCalls())
+func (mock *GameRepositoryInterfaceMock) GetStatsByPlayerIDCalls() []struct {
+	Ctx      context.Context
+	PlayerID pgtype.UUID
+} {
+	var calls []struct {
+		Ctx      context.Context
+		PlayerID pgtype.UUID
+	}
+	mock.lockGetStatsByPlayerID.RLock()
+	calls = mock.calls.GetStatsByPlayerID
+	mock.lockGetStatsByPlayerID.RUnlock()
 	return calls
 }
 

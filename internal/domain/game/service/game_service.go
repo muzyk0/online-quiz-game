@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -34,12 +35,41 @@ type AnswerSubmitResult struct {
 	AddedAt    time.Time
 }
 
+// MyGamesInput holds pagination/sorting params for GetMyGames.
+type MyGamesInput struct {
+	SortBy        string
+	SortDirection string
+	PageNumber    int
+	PageSize      int
+}
+
+// PaginatedGamesOutput is the paginated result of GetMyGames.
+type PaginatedGamesOutput struct {
+	PagesCount int
+	Page       int
+	PageSize   int
+	TotalCount int
+	Items      []*GameView
+}
+
+// StatisticView holds aggregated stats for a player.
+type StatisticView struct {
+	SumScore    int
+	AvgScores   float64
+	GamesCount  int
+	WinsCount   int
+	LossesCount int
+	DrawsCount  int
+}
+
 // GameServiceInterface defines public operations for quiz game.
 type GameServiceInterface interface {
 	JoinOrCreateGame(ctx context.Context, playerID string) (*GameView, error)
 	GetMyCurrentGame(ctx context.Context, playerID string) (*GameView, error)
 	GetGameByID(ctx context.Context, gameID, playerID string) (*GameView, error)
 	SubmitAnswer(ctx context.Context, playerID, answer string) (*AnswerSubmitResult, error)
+	GetMyGames(ctx context.Context, playerID string, input MyGamesInput) (*PaginatedGamesOutput, error)
+	GetMyStatistic(ctx context.Context, playerID string) (*StatisticView, error)
 }
 
 // --- Output types ---
@@ -283,6 +313,84 @@ func (s *GameService) SubmitAnswer(ctx context.Context, playerID, answer string)
 		QuestionID: fmt.Sprintf("%v", qidVal),
 		IsCorrect:  isCorrect,
 		AddedAt:    savedAnswer.AnsweredAt.Time,
+	}, nil
+}
+
+// GetMyGames returns a paginated list of all games the calling player participated in.
+func (s *GameService) GetMyGames(ctx context.Context, playerID string, input MyGamesInput) (*PaginatedGamesOutput, error) {
+	pid, err := parseUUID(playerID)
+	if err != nil {
+		return nil, ErrAccessDenied
+	}
+
+	pageSize := input.PageSize
+	if pageSize < 1 || pageSize > 20 {
+		pageSize = 10
+	}
+	pageNumber := input.PageNumber
+	if pageNumber < 1 {
+		pageNumber = 1
+	}
+
+	filter := gamerepo.GameListFilter{
+		SortBy:        input.SortBy,
+		SortDirection: input.SortDirection,
+		PageNumber:    pageNumber,
+		PageSize:      pageSize,
+	}
+
+	games, total, err := s.gameRepo.GetAllByPlayerID(ctx, pid, filter)
+	if err != nil {
+		return nil, fmt.Errorf("get player games: %w", err)
+	}
+
+	items := make([]*GameView, len(games))
+	for i, g := range games {
+		view, err := s.buildGameView(ctx, g, pid)
+		if err != nil {
+			return nil, err
+		}
+		items[i] = view
+	}
+
+	pagesCount := 0
+	if total > 0 {
+		pagesCount = (total + pageSize - 1) / pageSize
+	}
+
+	return &PaginatedGamesOutput{
+		PagesCount: pagesCount,
+		Page:       pageNumber,
+		PageSize:   pageSize,
+		TotalCount: total,
+		Items:      items,
+	}, nil
+}
+
+// GetMyStatistic returns aggregated stats for the calling player across all finished games.
+func (s *GameService) GetMyStatistic(ctx context.Context, playerID string) (*StatisticView, error) {
+	pid, err := parseUUID(playerID)
+	if err != nil {
+		return nil, ErrAccessDenied
+	}
+
+	stats, err := s.gameRepo.GetStatsByPlayerID(ctx, pid)
+	if err != nil {
+		return nil, fmt.Errorf("get player stats: %w", err)
+	}
+
+	var avgScores float64
+	if stats.GamesCount > 0 {
+		avgScores = math.Round(float64(stats.SumScore)/float64(stats.GamesCount)*100) / 100
+	}
+
+	return &StatisticView{
+		SumScore:    stats.SumScore,
+		AvgScores:   avgScores,
+		GamesCount:  stats.GamesCount,
+		WinsCount:   stats.WinsCount,
+		LossesCount: stats.LossesCount,
+		DrawsCount:  stats.DrawsCount,
 	}, nil
 }
 

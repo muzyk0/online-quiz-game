@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -16,6 +17,23 @@ var (
 	ErrGameNotFound    = errors.New("game not found")
 	ErrAnswerDuplicate = errors.New("answer already submitted for this question")
 )
+
+// GameListFilter holds pagination and sorting options for listing games.
+type GameListFilter struct {
+	SortBy        string // "pairCreatedDate" | "status" | "finishGameDate" | "startGameDate"
+	SortDirection string // "asc" | "desc"
+	PageNumber    int
+	PageSize      int
+}
+
+// PlayerStats holds aggregated statistics for a player across finished games.
+type PlayerStats struct {
+	GamesCount  int `db:"games_count"`
+	SumScore    int `db:"sum_score"`
+	WinsCount   int `db:"wins_count"`
+	LossesCount int `db:"losses_count"`
+	DrawsCount  int `db:"draws_count"`
+}
 
 //go:generate go run github.com/matryer/moq@latest -out ../service/mock_game_repository_test.go -pkg service . GameRepositoryInterface
 
@@ -30,6 +48,10 @@ type GameRepositoryInterface interface {
 	GetActiveByPlayerID(ctx context.Context, playerID pgtype.UUID) (*models.QuizGame, error)
 	IsPlayerInActiveGame(ctx context.Context, playerID pgtype.UUID) (bool, error)
 	UpdateScoresAndFinish(ctx context.Context, g *models.QuizGame) error
+
+	// History & stats
+	GetAllByPlayerID(ctx context.Context, playerID pgtype.UUID, filter GameListFilter) ([]*models.QuizGame, int, error)
+	GetStatsByPlayerID(ctx context.Context, playerID pgtype.UUID) (*PlayerStats, error)
 
 	// Questions
 	AssignQuestions(ctx context.Context, gameID pgtype.UUID, questionIDs []pgtype.UUID) error
@@ -276,4 +298,82 @@ func (r *GameRepository) CountPlayerAnswers(ctx context.Context, gameID, playerI
 		return 0, fmt.Errorf("count player answers: %w", err)
 	}
 	return count, nil
+}
+
+func (r *GameRepository) GetAllByPlayerID(ctx context.Context, playerID pgtype.UUID, filter GameListFilter) ([]*models.QuizGame, int, error) {
+	const where = `WHERE first_player_id = $1 OR second_player_id = $1`
+
+	var total int
+	if err := r.db.GetContext(ctx, &total, `SELECT COUNT(*) FROM quiz_games `+where, playerID); err != nil {
+		return nil, 0, fmt.Errorf("count player games: %w", err)
+	}
+
+	pageSize := filter.PageSize
+	if pageSize < 1 || pageSize > 20 {
+		pageSize = 10
+	}
+	pageNumber := filter.PageNumber
+	if pageNumber < 1 {
+		pageNumber = 1
+	}
+	offset := (pageNumber - 1) * pageSize
+
+	sortCol := validGameSortColumn(filter.SortBy)
+	sortDir := validSortDir(filter.SortDirection)
+
+	query := fmt.Sprintf(
+		`SELECT %s FROM quiz_games %s ORDER BY %s %s, created_at DESC LIMIT $2 OFFSET $3`,
+		gameColumns, where, sortCol, sortDir,
+	)
+
+	var games []*models.QuizGame
+	if err := r.db.SelectContext(ctx, &games, query, playerID, pageSize, offset); err != nil {
+		return nil, 0, fmt.Errorf("list player games: %w", err)
+	}
+	return games, total, nil
+}
+
+func (r *GameRepository) GetStatsByPlayerID(ctx context.Context, playerID pgtype.UUID) (*PlayerStats, error) {
+	query := `
+		SELECT
+			COUNT(*) AS games_count,
+			COALESCE(SUM(CASE WHEN first_player_id = $1 THEN first_player_score ELSE second_player_score END), 0) AS sum_score,
+			COALESCE(SUM(CASE WHEN
+				(first_player_id = $1 AND first_player_score > second_player_score) OR
+				(second_player_id = $1 AND second_player_score > first_player_score)
+			THEN 1 ELSE 0 END), 0) AS wins_count,
+			COALESCE(SUM(CASE WHEN
+				(first_player_id = $1 AND first_player_score < second_player_score) OR
+				(second_player_id = $1 AND second_player_score < first_player_score)
+			THEN 1 ELSE 0 END), 0) AS losses_count,
+			COALESCE(SUM(CASE WHEN first_player_score = second_player_score THEN 1 ELSE 0 END), 0) AS draws_count
+		FROM quiz_games
+		WHERE (first_player_id = $1 OR second_player_id = $1)
+		  AND status = 'Finished'`
+
+	var stats PlayerStats
+	if err := r.db.GetContext(ctx, &stats, query, playerID); err != nil {
+		return nil, fmt.Errorf("get player stats: %w", err)
+	}
+	return &stats, nil
+}
+
+func validGameSortColumn(s string) string {
+	switch s {
+	case "status":
+		return "status"
+	case "finishGameDate":
+		return "finished_at"
+	case "startGameDate":
+		return "started_at"
+	default: // "pairCreatedDate" and fallback
+		return "created_at"
+	}
+}
+
+func validSortDir(s string) string {
+	if strings.ToLower(s) == "asc" {
+		return "ASC"
+	}
+	return "DESC"
 }
