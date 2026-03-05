@@ -29,7 +29,7 @@ func setup(t *testing.T, ts *testServer, numUsers int) []string {
 }
 
 func userLogin(i int) string { return "user" + string(rune('A'+i)) }
-func userEmail(i int) string  { return "user" + string(rune('A'+i)) + "@test.com" }
+func userEmail(i int) string { return "user" + string(rune('A'+i)) + "@test.com" }
 
 // ─────────────────────────────────────────────
 // Access rights
@@ -178,6 +178,9 @@ func TestGameExceptions(t *testing.T) {
 		s, _ := ts.do(t, http.MethodGet, "/api/pair-game-quiz/pairs/my-current", nil, noAuth)
 		assert.Equal(t, http.StatusUnauthorized, s)
 
+		s, _ = ts.do(t, http.MethodGet, "/api/pair-game-quiz/pairs/my", nil, noAuth)
+		assert.Equal(t, http.StatusUnauthorized, s)
+
 		s, _ = ts.do(t, http.MethodGet, "/api/pair-game-quiz/pairs/some-id", nil, noAuth)
 		assert.Equal(t, http.StatusUnauthorized, s)
 
@@ -186,6 +189,9 @@ func TestGameExceptions(t *testing.T) {
 
 		s, _ = ts.do(t, http.MethodPost, "/api/pair-game-quiz/pairs/my-current/answers",
 			map[string]string{"answer": "answer"}, noAuth)
+		assert.Equal(t, http.StatusUnauthorized, s)
+
+		s, _ = ts.do(t, http.MethodGet, "/api/pair-game-quiz/users/my-statistic", nil, noAuth)
 		assert.Equal(t, http.StatusUnauthorized, s)
 	})
 

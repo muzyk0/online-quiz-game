@@ -37,7 +37,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 // testServer holds the test server and HTTP client for e2e tests.
 type testServer struct {
 	server *httptest.Server
@@ -288,6 +287,24 @@ func (ts *testServer) submitAnswer(t *testing.T, token, answer string) (int, []b
 func (ts *testServer) getMyCurrentGame(t *testing.T, token string) (int, []byte) {
 	t.Helper()
 	return ts.do(t, http.MethodGet, "/api/pair-game-quiz/pairs/my-current", nil, bearerHeader(token))
+}
+
+// getMyGames calls GET /api/pair-game-quiz/pairs/my.
+func (ts *testServer) getMyGames(t *testing.T, token, rawQuery string) (int, []byte) {
+	t.Helper()
+
+	path := "/api/pair-game-quiz/pairs/my"
+	if rawQuery != "" {
+		path += "?" + rawQuery
+	}
+
+	return ts.do(t, http.MethodGet, path, nil, bearerHeader(token))
+}
+
+// getMyStatistic calls GET /api/pair-game-quiz/users/my-statistic.
+func (ts *testServer) getMyStatistic(t *testing.T, token string) (int, []byte) {
+	t.Helper()
+	return ts.do(t, http.MethodGet, "/api/pair-game-quiz/users/my-statistic", nil, bearerHeader(token))
 }
 
 // getGameByID calls GET /api/pair-game-quiz/pairs/:id.
