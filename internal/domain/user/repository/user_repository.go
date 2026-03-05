@@ -129,17 +129,19 @@ func (r *UserRepository) Update(ctx context.Context, user models.User) (*models.
 	query := `
 		UPDATE users SET
 			email      = $1,
-			first_name = $2,
-			last_name  = $3,
-			avatar_url = $4,
-			is_verified = $5,
+			password_hash = $2,
+			first_name = $3,
+			last_name  = $4,
+			avatar_url = $5,
+			is_verified = $6,
 			updated_at = NOW()
-		WHERE id = $6
+		WHERE id = $7
 		RETURNING ` + userColumns
 
 	var updated models.User
 	err := r.db.QueryRowxContext(ctx, query,
 		user.Email,
+		user.PasswordHash,
 		user.FirstName,
 		user.LastName,
 		user.AvatarUrl,

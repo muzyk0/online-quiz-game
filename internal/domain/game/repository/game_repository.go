@@ -25,6 +25,7 @@ type GameRepositoryInterface interface {
 	CreatePending(ctx context.Context, firstPlayerID pgtype.UUID) (*models.QuizGame, error)
 	FindPending(ctx context.Context) (*models.QuizGame, error)
 	ActivateGame(ctx context.Context, gameID, secondPlayerID pgtype.UUID) (*models.QuizGame, error)
+	ActivateGameWithQuestions(ctx context.Context, gameID, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error)
 	GetByID(ctx context.Context, id pgtype.UUID) (*models.QuizGame, error)
 	GetActiveByPlayerID(ctx context.Context, playerID pgtype.UUID) (*models.QuizGame, error)
 	IsPlayerInActiveGame(ctx context.Context, playerID pgtype.UUID) (bool, error)
@@ -92,6 +93,50 @@ func (r *GameRepository) ActivateGame(ctx context.Context, gameID, secondPlayerI
 		}
 		return nil, fmt.Errorf("activate game: %w", err)
 	}
+	return &g, nil
+}
+
+func (r *GameRepository) ActivateGameWithQuestions(
+	ctx context.Context,
+	gameID, secondPlayerID pgtype.UUID,
+	questionIDs []pgtype.UUID,
+) (*models.QuizGame, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin activate game transaction: %w", err)
+	}
+
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	query := `
+		UPDATE quiz_games
+		SET second_player_id = $2, status = 'Active', started_at = NOW()
+		WHERE id = $1 AND status = 'PendingSecondPlayer'
+		RETURNING ` + gameColumns
+
+	var g models.QuizGame
+	if err := tx.GetContext(ctx, &g, query, gameID, secondPlayerID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrGameNotFound
+		}
+		return nil, fmt.Errorf("activate game: %w", err)
+	}
+
+	for i, qID := range questionIDs {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO quiz_game_questions (game_id, question_id, order_index) VALUES ($1, $2, $3)`,
+			gameID, qID, i,
+		); err != nil {
+			return nil, fmt.Errorf("assign question %d: %w", i, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit activate game transaction: %w", err)
+	}
+
 	return &g, nil
 }
 

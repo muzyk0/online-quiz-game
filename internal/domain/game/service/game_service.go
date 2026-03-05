@@ -67,14 +67,14 @@ type QuestionView struct {
 }
 
 type GameView struct {
-	ID                  string
-	FirstPlayerProgress *PlayerProgress
+	ID                   string
+	FirstPlayerProgress  *PlayerProgress
 	SecondPlayerProgress *PlayerProgress // nil when PendingSecondPlayer
-	Questions           []*QuestionView  // nil when PendingSecondPlayer
-	Status              string
-	PairCreatedDate     time.Time
-	StartGameDate       *time.Time
-	FinishGameDate      *time.Time
+	Questions            []*QuestionView // nil when PendingSecondPlayer
+	Status               string
+	PairCreatedDate      time.Time
+	StartGameDate        *time.Time
+	FinishGameDate       *time.Time
 }
 
 // UserLookup is a minimal user data source injected to avoid circular domain deps.
@@ -125,14 +125,15 @@ func (s *GameService) JoinOrCreateGame(ctx context.Context, playerID string) (*G
 	}
 
 	if pending != nil {
-		// Activate this game: add second player + assign questions
-		game, err := s.gameRepo.ActivateGame(ctx, pending.ID, pid)
+		questionIDs, err := s.loadRandomQuestionIDs(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("activate game: %w", err)
+			return nil, err
 		}
 
-		if err := s.assignRandomQuestions(ctx, game.ID); err != nil {
-			return nil, err
+		// Activate this game and assign questions atomically.
+		game, err := s.gameRepo.ActivateGameWithQuestions(ctx, pending.ID, pid, questionIDs)
+		if err != nil {
+			return nil, fmt.Errorf("activate game: %w", err)
 		}
 
 		return s.buildGameView(ctx, game, pid)
@@ -287,20 +288,20 @@ func (s *GameService) SubmitAnswer(ctx context.Context, playerID, answer string)
 
 // --- internal helpers ---
 
-func (s *GameService) assignRandomQuestions(ctx context.Context, gameID pgtype.UUID) error {
+func (s *GameService) loadRandomQuestionIDs(ctx context.Context) ([]pgtype.UUID, error) {
 	questions, err := s.questionRepo.ListPublished(ctx, questionsPerGame)
 	if err != nil {
-		return fmt.Errorf("list published questions: %w", err)
+		return nil, fmt.Errorf("list published questions: %w", err)
 	}
 	if len(questions) < questionsPerGame {
-		return ErrNotEnoughQuestions
+		return nil, ErrNotEnoughQuestions
 	}
 
 	ids := make([]pgtype.UUID, questionsPerGame)
 	for i, q := range questions[:questionsPerGame] {
 		ids[i] = q.ID
 	}
-	return s.gameRepo.AssignQuestions(ctx, gameID, ids)
+	return ids, nil
 }
 
 func (s *GameService) recalculateScores(ctx context.Context, game *gamemodels.QuizGame) (*gamemodels.QuizGame, error) {

@@ -24,6 +24,9 @@ var _ repository.GameRepositoryInterface = &GameRepositoryInterfaceMock{}
 //			ActivateGameFunc: func(ctx context.Context, gameID pgtype.UUID, secondPlayerID pgtype.UUID) (*models.QuizGame, error) {
 //				panic("mock out the ActivateGame method")
 //			},
+//			ActivateGameWithQuestionsFunc: func(ctx context.Context, gameID pgtype.UUID, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error) {
+//				panic("mock out the ActivateGameWithQuestions method")
+//			},
 //			AssignQuestionsFunc: func(ctx context.Context, gameID pgtype.UUID, questionIDs []pgtype.UUID) error {
 //				panic("mock out the AssignQuestions method")
 //			},
@@ -66,6 +69,9 @@ var _ repository.GameRepositoryInterface = &GameRepositoryInterfaceMock{}
 type GameRepositoryInterfaceMock struct {
 	// ActivateGameFunc mocks the ActivateGame method.
 	ActivateGameFunc func(ctx context.Context, gameID pgtype.UUID, secondPlayerID pgtype.UUID) (*models.QuizGame, error)
+
+	// ActivateGameWithQuestionsFunc mocks the ActivateGameWithQuestions method.
+	ActivateGameWithQuestionsFunc func(ctx context.Context, gameID pgtype.UUID, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error)
 
 	// AssignQuestionsFunc mocks the AssignQuestions method.
 	AssignQuestionsFunc func(ctx context.Context, gameID pgtype.UUID, questionIDs []pgtype.UUID) error
@@ -110,6 +116,17 @@ type GameRepositoryInterfaceMock struct {
 			GameID pgtype.UUID
 			// SecondPlayerID is the secondPlayerID argument value.
 			SecondPlayerID pgtype.UUID
+		}
+		// ActivateGameWithQuestions holds details about calls to the ActivateGameWithQuestions method.
+		ActivateGameWithQuestions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// GameID is the gameID argument value.
+			GameID pgtype.UUID
+			// SecondPlayerID is the secondPlayerID argument value.
+			SecondPlayerID pgtype.UUID
+			// QuestionIDs is the questionIDs argument value.
+			QuestionIDs []pgtype.UUID
 		}
 		// AssignQuestions holds details about calls to the AssignQuestions method.
 		AssignQuestions []struct {
@@ -193,18 +210,19 @@ type GameRepositoryInterfaceMock struct {
 			G *models.QuizGame
 		}
 	}
-	lockActivateGame          sync.RWMutex
-	lockAssignQuestions       sync.RWMutex
-	lockCountPlayerAnswers    sync.RWMutex
-	lockCreatePending         sync.RWMutex
-	lockFindPending           sync.RWMutex
-	lockGetActiveByPlayerID   sync.RWMutex
-	lockGetByID               sync.RWMutex
-	lockGetGameQuestions      sync.RWMutex
-	lockGetPlayerAnswers      sync.RWMutex
-	lockIsPlayerInActiveGame  sync.RWMutex
-	lockSaveAnswer            sync.RWMutex
-	lockUpdateScoresAndFinish sync.RWMutex
+	lockActivateGame              sync.RWMutex
+	lockActivateGameWithQuestions sync.RWMutex
+	lockAssignQuestions           sync.RWMutex
+	lockCountPlayerAnswers        sync.RWMutex
+	lockCreatePending             sync.RWMutex
+	lockFindPending               sync.RWMutex
+	lockGetActiveByPlayerID       sync.RWMutex
+	lockGetByID                   sync.RWMutex
+	lockGetGameQuestions          sync.RWMutex
+	lockGetPlayerAnswers          sync.RWMutex
+	lockIsPlayerInActiveGame      sync.RWMutex
+	lockSaveAnswer                sync.RWMutex
+	lockUpdateScoresAndFinish     sync.RWMutex
 }
 
 // ActivateGame calls ActivateGameFunc.
@@ -244,6 +262,50 @@ func (mock *GameRepositoryInterfaceMock) ActivateGameCalls() []struct {
 	mock.lockActivateGame.RLock()
 	calls = mock.calls.ActivateGame
 	mock.lockActivateGame.RUnlock()
+	return calls
+}
+
+// ActivateGameWithQuestions calls ActivateGameWithQuestionsFunc.
+func (mock *GameRepositoryInterfaceMock) ActivateGameWithQuestions(ctx context.Context, gameID pgtype.UUID, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error) {
+	if mock.ActivateGameWithQuestionsFunc == nil {
+		panic("GameRepositoryInterfaceMock.ActivateGameWithQuestionsFunc: method is nil but GameRepositoryInterface.ActivateGameWithQuestions was just called")
+	}
+	callInfo := struct {
+		Ctx            context.Context
+		GameID         pgtype.UUID
+		SecondPlayerID pgtype.UUID
+		QuestionIDs    []pgtype.UUID
+	}{
+		Ctx:            ctx,
+		GameID:         gameID,
+		SecondPlayerID: secondPlayerID,
+		QuestionIDs:    questionIDs,
+	}
+	mock.lockActivateGameWithQuestions.Lock()
+	mock.calls.ActivateGameWithQuestions = append(mock.calls.ActivateGameWithQuestions, callInfo)
+	mock.lockActivateGameWithQuestions.Unlock()
+	return mock.ActivateGameWithQuestionsFunc(ctx, gameID, secondPlayerID, questionIDs)
+}
+
+// ActivateGameWithQuestionsCalls gets all the calls that were made to ActivateGameWithQuestions.
+// Check the length with:
+//
+//	len(mockedGameRepositoryInterface.ActivateGameWithQuestionsCalls())
+func (mock *GameRepositoryInterfaceMock) ActivateGameWithQuestionsCalls() []struct {
+	Ctx            context.Context
+	GameID         pgtype.UUID
+	SecondPlayerID pgtype.UUID
+	QuestionIDs    []pgtype.UUID
+} {
+	var calls []struct {
+		Ctx            context.Context
+		GameID         pgtype.UUID
+		SecondPlayerID pgtype.UUID
+		QuestionIDs    []pgtype.UUID
+	}
+	mock.lockActivateGameWithQuestions.RLock()
+	calls = mock.calls.ActivateGameWithQuestions
+	mock.lockActivateGameWithQuestions.RUnlock()
 	return calls
 }
 

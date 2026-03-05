@@ -109,6 +109,31 @@ func TestJWTMiddlewareInvalidToken(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, appErr.Code)
 }
 
+func TestJWTMiddlewareRejectsRefreshToken(t *testing.T) {
+	e := echo.New()
+	tm := NewTokenManager("test-secret", 15*time.Minute, 7*24*time.Hour)
+
+	refreshToken, err := tm.GenerateRefreshToken("user-123", "test@example.com", "user", "token-id-123")
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
+	req.Header.Set("Authorization", "Bearer "+refreshToken)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	middleware := JWTMiddleware(tm)
+	handler := middleware(func(c echo.Context) error {
+		return c.String(http.StatusOK, "OK")
+	})
+
+	err = handler(c)
+	require.Error(t, err)
+	var appErr *apperrors.AppError
+	ok := errors.As(err, &appErr)
+	assert.True(t, ok)
+	assert.Equal(t, http.StatusUnauthorized, appErr.Code)
+}
+
 func TestOptionalJWTMiddleware(t *testing.T) {
 	e := echo.New()
 	tm := NewTokenManager("test-secret", 15*time.Minute, 7*24*time.Hour)

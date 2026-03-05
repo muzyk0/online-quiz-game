@@ -98,7 +98,7 @@ func (h *Handler) Refresh(c echo.Context) error {
 	}
 
 	// Validate refresh token
-	claims, err := h.tokenManager.ValidateToken(refreshToken)
+	claims, err := h.tokenManager.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		return apperrors.Unauthorized("Invalid or expired refresh token")
 	}

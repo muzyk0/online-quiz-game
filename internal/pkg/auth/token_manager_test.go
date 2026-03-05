@@ -38,6 +38,7 @@ func TestValidateToken(t *testing.T) {
 	assert.Equal(t, userID, claims.UserID)
 	assert.Equal(t, email, claims.Email)
 	assert.Equal(t, userType, claims.UserType)
+	assert.Equal(t, tokenTypeAccess, claims.TokenType)
 	assert.Equal(t, "online-quiz-game", claims.Issuer)
 }
 
@@ -55,6 +56,39 @@ func TestValidateTokenInvalid(t *testing.T) {
 
 	_, err = wrongTm.ValidateToken(tokenString)
 	assert.Error(t, err)
+}
+
+func TestValidateTokenRejectsRefreshToken(t *testing.T) {
+	tm := newTestTokenManager()
+
+	refreshToken, err := tm.GenerateRefreshToken("user-123", "test@example.com", "user", "token-id-123")
+	require.NoError(t, err)
+
+	_, err = tm.ValidateToken(refreshToken)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unexpected token type")
+}
+
+func TestValidateRefreshToken(t *testing.T) {
+	tm := newTestTokenManager()
+
+	refreshToken, err := tm.GenerateRefreshToken("user-123", "test@example.com", "user", "token-id-123")
+	require.NoError(t, err)
+
+	claims, err := tm.ValidateRefreshToken(refreshToken)
+	require.NoError(t, err)
+	assert.Equal(t, tokenTypeRefresh, claims.TokenType)
+}
+
+func TestValidateRefreshTokenRejectsAccessToken(t *testing.T) {
+	tm := newTestTokenManager()
+
+	accessToken, err := tm.GenerateAccessToken("user-123", "test@example.com", "user")
+	require.NoError(t, err)
+
+	_, err = tm.ValidateRefreshToken(accessToken)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unexpected token type")
 }
 
 func TestGenerateAccessToken(t *testing.T) {
@@ -80,6 +114,7 @@ func TestGenerateAccessToken(t *testing.T) {
 	assert.Equal(t, userID, claims.UserID)
 	assert.Equal(t, email, claims.Email)
 	assert.Equal(t, userType, claims.UserType)
+	assert.Equal(t, tokenTypeAccess, claims.TokenType)
 	assert.Equal(t, "online-quiz-game", claims.Issuer)
 	assert.Empty(t, claims.TokenID, "Access tokens should not have TokenID")
 }
@@ -108,6 +143,7 @@ func TestGenerateRefreshToken(t *testing.T) {
 	assert.Equal(t, userID, claims.UserID)
 	assert.Equal(t, email, claims.Email)
 	assert.Equal(t, userType, claims.UserType)
+	assert.Equal(t, tokenTypeRefresh, claims.TokenType)
 	assert.Equal(t, tokenID, claims.TokenID)
 	assert.Equal(t, "online-quiz-game", claims.Issuer)
 }
