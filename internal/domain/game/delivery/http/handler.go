@@ -148,6 +148,52 @@ func (h *Handler) GetMyStatistic(c echo.Context) error {
 	})
 }
 
+// GetTopPlayers godoc
+//
+//	@Summary		Get top players leaderboard
+//	@Description	Returns a paginated list of players sorted by their game statistics.
+//	@Tags			Quiz/Game
+//	@Produce		json
+//	@Param			sort		query	[]string	false	"Sort criteria (e.g. avgScores desc)"
+//	@Param			pageNumber	query	int			false	"Page number (default: 1)"
+//	@Param			pageSize	query	int			false	"Page size 1-20 (default: 10)"
+//	@Success		200	{object}	dto.PaginatedTopPlayersResponse
+//	@Router			/api/pair-game-quiz/users/top [get]
+func (h *Handler) GetTopPlayers(c echo.Context) error {
+	sort := c.QueryParams()["sort"]
+
+	input := service.TopPlayersInput{
+		Sort:       sort,
+		PageNumber: queryIntOrDefault(c, "pageNumber", 1),
+		PageSize:   queryIntOrDefault(c, "pageSize", 10),
+	}
+
+	result, err := h.svc.GetTopPlayers(c.Request().Context(), input)
+	if err != nil {
+		return mapGameError(err)
+	}
+
+	items := make([]*dto.TopPlayerResponse, len(result.Items))
+	for i, v := range result.Items {
+		items[i] = &dto.TopPlayerResponse{
+			SumScore:    v.SumScore,
+			AvgScores:   v.AvgScores,
+			GamesCount:  v.GamesCount,
+			WinsCount:   v.WinsCount,
+			LossesCount: v.LossesCount,
+			DrawsCount:  v.DrawsCount,
+			Player:      dto.PlayerInfoResponse{ID: v.Player.ID, Login: v.Player.Login},
+		}
+	}
+	return c.JSON(nethttp.StatusOK, dto.PaginatedTopPlayersResponse{
+		PagesCount: result.PagesCount,
+		Page:       result.Page,
+		PageSize:   result.PageSize,
+		TotalCount: result.TotalCount,
+		Items:      items,
+	})
+}
+
 // SubmitAnswer godoc
 //
 //	@Summary		Submit an answer for the current question

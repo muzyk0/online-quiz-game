@@ -115,6 +115,9 @@ type GameRepositoryInterfaceMock struct {
 	// UpdateScoresAndFinishFunc mocks the UpdateScoresAndFinish method.
 	UpdateScoresAndFinishFunc func(ctx context.Context, g *models.QuizGame) error
 
+	// GetTopPlayersFunc mocks the GetTopPlayers method.
+	GetTopPlayersFunc func(ctx context.Context, filter repository.TopPlayersFilter) ([]*repository.TopPlayerStats, int, error)
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// ActivateGame holds details about calls to the ActivateGame method.
@@ -227,6 +230,13 @@ type GameRepositoryInterfaceMock struct {
 			// G is the g argument value.
 			G *models.QuizGame
 		}
+		// GetTopPlayers holds details about calls to the GetTopPlayers method.
+		GetTopPlayers []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Filter is the filter argument value.
+			Filter repository.TopPlayersFilter
+		}
 	}
 	lockActivateGame              sync.RWMutex
 	lockFindPendingAndActivate    sync.RWMutex
@@ -242,6 +252,7 @@ type GameRepositoryInterfaceMock struct {
 	lockIsPlayerInActiveGame      sync.RWMutex
 	lockSaveAnswer                sync.RWMutex
 	lockUpdateScoresAndFinish     sync.RWMutex
+	lockGetTopPlayers             sync.RWMutex
 }
 
 // ActivateGame calls ActivateGameFunc.
@@ -770,5 +781,38 @@ func (mock *GameRepositoryInterfaceMock) UpdateScoresAndFinishCalls() []struct {
 	mock.lockUpdateScoresAndFinish.RLock()
 	calls = mock.calls.UpdateScoresAndFinish
 	mock.lockUpdateScoresAndFinish.RUnlock()
+	return calls
+}
+
+// GetTopPlayers calls GetTopPlayersFunc.
+func (mock *GameRepositoryInterfaceMock) GetTopPlayers(ctx context.Context, filter repository.TopPlayersFilter) ([]*repository.TopPlayerStats, int, error) {
+	if mock.GetTopPlayersFunc == nil {
+		panic("GameRepositoryInterfaceMock.GetTopPlayersFunc: method is nil but GameRepositoryInterface.GetTopPlayers was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Filter repository.TopPlayersFilter
+	}{
+		Ctx:    ctx,
+		Filter: filter,
+	}
+	mock.lockGetTopPlayers.Lock()
+	mock.calls.GetTopPlayers = append(mock.calls.GetTopPlayers, callInfo)
+	mock.lockGetTopPlayers.Unlock()
+	return mock.GetTopPlayersFunc(ctx, filter)
+}
+
+// GetTopPlayersCalls gets all the calls that were made to GetTopPlayers.
+func (mock *GameRepositoryInterfaceMock) GetTopPlayersCalls() []struct {
+	Ctx    context.Context
+	Filter repository.TopPlayersFilter
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Filter repository.TopPlayersFilter
+	}
+	mock.lockGetTopPlayers.RLock()
+	calls = mock.calls.GetTopPlayers
+	mock.lockGetTopPlayers.RUnlock()
 	return calls
 }

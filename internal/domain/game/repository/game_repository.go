@@ -35,6 +35,26 @@ type PlayerStats struct {
 	DrawsCount  int `db:"draws_count"`
 }
 
+// TopPlayerStats holds aggregated statistics for the top-players leaderboard.
+type TopPlayerStats struct {
+	PlayerID    string  `db:"player_id"`
+	PlayerLogin string  `db:"player_login"`
+	SumScore    int     `db:"sum_score"`
+	AvgScores   float64 `db:"avg_scores"`
+	GamesCount  int     `db:"games_count"`
+	WinsCount   int     `db:"wins_count"`
+	LossesCount int     `db:"losses_count"`
+	DrawsCount  int     `db:"draws_count"`
+}
+
+// TopPlayersFilter holds pagination and multi-column sort options for the leaderboard.
+type TopPlayersFilter struct {
+	// Sort is an ordered list of "field dir" strings, e.g. ["avgScores desc", "sumScore desc"].
+	Sort       []string
+	PageNumber int
+	PageSize   int
+}
+
 //go:generate go run github.com/matryer/moq@latest -out ../service/mock_game_repository_test.go -pkg service . GameRepositoryInterface
 
 // GameRepositoryInterface defines all DB operations needed by the game service.
@@ -53,6 +73,7 @@ type GameRepositoryInterface interface {
 	// History & stats
 	GetAllByPlayerID(ctx context.Context, playerID pgtype.UUID, filter GameListFilter) ([]*models.QuizGame, int, error)
 	GetStatsByPlayerID(ctx context.Context, playerID pgtype.UUID) (*PlayerStats, error)
+	GetTopPlayers(ctx context.Context, filter TopPlayersFilter) ([]*TopPlayerStats, int, error)
 
 	// Questions
 	AssignQuestions(ctx context.Context, gameID pgtype.UUID, questionIDs []pgtype.UUID) error
@@ -434,6 +455,136 @@ func (r *GameRepository) GetStatsByPlayerID(ctx context.Context, playerID pgtype
 		return nil, fmt.Errorf("get player stats: %w", err)
 	}
 	return &stats, nil
+}
+
+func (r *GameRepository) GetTopPlayers(ctx context.Context, filter TopPlayersFilter) ([]*TopPlayerStats, int, error) {
+	const cte = `
+		WITH player_stats AS (
+			SELECT
+				u.id::text                                                            AS player_id,
+				COALESCE(u.login, u.email)                                           AS player_login,
+				COUNT(g.id)                                                          AS games_count,
+				COALESCE(SUM(CASE WHEN g.first_player_id = u.id
+					THEN g.first_player_score ELSE g.second_player_score END), 0)    AS sum_score,
+				COALESCE(SUM(CASE WHEN
+					(g.first_player_id = u.id AND g.first_player_score > g.second_player_score) OR
+					(g.second_player_id = u.id AND g.second_player_score > g.first_player_score)
+				THEN 1 ELSE 0 END), 0)                                               AS wins_count,
+				COALESCE(SUM(CASE WHEN
+					(g.first_player_id = u.id AND g.first_player_score < g.second_player_score) OR
+					(g.second_player_id = u.id AND g.second_player_score < g.first_player_score)
+				THEN 1 ELSE 0 END), 0)                                               AS losses_count,
+				COALESCE(SUM(CASE WHEN g.first_player_score = g.second_player_score THEN 1 ELSE 0 END), 0) AS draws_count,
+				ROUND(
+					COALESCE(SUM(CASE WHEN g.first_player_id = u.id
+						THEN g.first_player_score ELSE g.second_player_score END), 0)::numeric
+					/ NULLIF(COUNT(g.id), 0),
+					2
+				)::float8                                                            AS avg_scores
+			FROM users u
+			JOIN quiz_games g ON g.first_player_id = u.id OR g.second_player_id = u.id
+			WHERE g.status = 'Finished'
+			GROUP BY u.id, u.login, u.email
+		)`
+
+	pageSize := filter.PageSize
+	if pageSize < 1 || pageSize > 20 {
+		pageSize = 10
+	}
+	pageNumber := filter.PageNumber
+	if pageNumber < 1 {
+		pageNumber = 1
+	}
+	offset := (pageNumber - 1) * pageSize
+
+	orderClause := buildTopPlayersOrder(filter.Sort)
+
+	var total int
+	countQuery := cte + ` SELECT COUNT(*) FROM player_stats`
+	if err := r.db.GetContext(ctx, &total, countQuery); err != nil {
+		return nil, 0, fmt.Errorf("count top players: %w", err)
+	}
+
+	dataQuery := fmt.Sprintf(
+		`%s SELECT player_id, player_login, sum_score, avg_scores, games_count, wins_count, losses_count, draws_count
+		 FROM player_stats ORDER BY %s LIMIT $1 OFFSET $2`,
+		cte, orderClause,
+	)
+
+	var rows []struct {
+		PlayerID    string  `db:"player_id"`
+		PlayerLogin string  `db:"player_login"`
+		SumScore    int     `db:"sum_score"`
+		AvgScores   float64 `db:"avg_scores"`
+		GamesCount  int     `db:"games_count"`
+		WinsCount   int     `db:"wins_count"`
+		LossesCount int     `db:"losses_count"`
+		DrawsCount  int     `db:"draws_count"`
+	}
+	if err := r.db.SelectContext(ctx, &rows, dataQuery, pageSize, offset); err != nil {
+		return nil, 0, fmt.Errorf("list top players: %w", err)
+	}
+
+	result := make([]*TopPlayerStats, len(rows))
+	for i, row := range rows {
+		result[i] = &TopPlayerStats{
+			PlayerID:    row.PlayerID,
+			PlayerLogin: row.PlayerLogin,
+			SumScore:    row.SumScore,
+			AvgScores:   row.AvgScores,
+			GamesCount:  row.GamesCount,
+			WinsCount:   row.WinsCount,
+			LossesCount: row.LossesCount,
+			DrawsCount:  row.DrawsCount,
+		}
+	}
+	return result, total, nil
+}
+
+// buildTopPlayersOrder converts sort strings like "avgScores desc" into a SQL ORDER BY clause.
+func buildTopPlayersOrder(sort []string) string {
+	if len(sort) == 0 {
+		return "avg_scores DESC, sum_score DESC"
+	}
+
+	var parts []string
+	for _, s := range sort {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		fields := strings.Fields(s)
+		col := validTopPlayerSortColumn(fields[0])
+		dir := "DESC"
+		if len(fields) > 1 {
+			dir = validSortDir(fields[1])
+		}
+		parts = append(parts, col+" "+dir)
+	}
+
+	if len(parts) == 0 {
+		return "avg_scores DESC, sum_score DESC"
+	}
+	return strings.Join(parts, ", ")
+}
+
+func validTopPlayerSortColumn(s string) string {
+	switch s {
+	case "sumScore":
+		return "sum_score"
+	case "avgScores":
+		return "avg_scores"
+	case "winsCount":
+		return "wins_count"
+	case "lossesCount":
+		return "losses_count"
+	case "gamesCount":
+		return "games_count"
+	case "drawsCount":
+		return "draws_count"
+	default:
+		return "avg_scores"
+	}
 }
 
 func validGameSortColumn(s string) string {

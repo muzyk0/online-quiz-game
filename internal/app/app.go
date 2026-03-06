@@ -15,21 +15,20 @@ import (
 
 	authhttp "github.com/muzyk0/online-quiz-game/internal/domain/auth/delivery/http"
 	gamehttp "github.com/muzyk0/online-quiz-game/internal/domain/game/delivery/http"
-	testinghttp "github.com/muzyk0/online-quiz-game/internal/domain/testing/delivery/http"
 	gamerepo "github.com/muzyk0/online-quiz-game/internal/domain/game/repository"
 	gameservice "github.com/muzyk0/online-quiz-game/internal/domain/game/service"
 	healthhttp "github.com/muzyk0/online-quiz-game/internal/domain/health/delivery/http"
 	questionhttp "github.com/muzyk0/online-quiz-game/internal/domain/question/delivery/http"
 	questionrepo "github.com/muzyk0/online-quiz-game/internal/domain/question/repository"
 	questionservice "github.com/muzyk0/online-quiz-game/internal/domain/question/service"
+	testinghttp "github.com/muzyk0/online-quiz-game/internal/domain/testing/delivery/http"
 	userhttp "github.com/muzyk0/online-quiz-game/internal/domain/user/delivery/http"
 	userrepo "github.com/muzyk0/online-quiz-game/internal/domain/user/repository"
 	userservice "github.com/muzyk0/online-quiz-game/internal/domain/user/service"
 
-	"github.com/muzyk0/online-quiz-game/internal/platform/http/auth"
 	"github.com/muzyk0/online-quiz-game/internal/pkg/logger"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/auth"
 	"github.com/muzyk0/online-quiz-game/internal/platform/http/validation"
-
 )
 
 // App is the main application struct.
@@ -114,7 +113,7 @@ func (a *App) initServer() {
 	userhttp.RegisterSARoutes(e, a.saUserHandler, saMiddleware)
 	questionhttp.RegisterRoutes(e, a.questionHandler, saMiddleware)
 	gamehttp.RegisterRoutes(e, a.gameHandler, authMiddleware)
-	if a.cfg.ServerEnv == "test" {
+	if a.cfg.ServerEnv == "test" || a.cfg.ServerEnv == "development" {
 		testinghttp.RegisterRoutes(e, a.testingHandler)
 	}
 }

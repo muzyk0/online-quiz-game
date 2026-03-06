@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	gamemodels "github.com/muzyk0/online-quiz-game/internal/domain/game/models"
+	gamerepo "github.com/muzyk0/online-quiz-game/internal/domain/game/repository"
 	questionmodels "github.com/muzyk0/online-quiz-game/internal/domain/question/models"
 	questionrepo "github.com/muzyk0/online-quiz-game/internal/domain/question/repository"
 	"github.com/stretchr/testify/assert"
@@ -126,4 +127,50 @@ func TestGameServiceJoinOrCreateGamePropagatesAtomicActivationError(t *testing.T
 
 	require.Error(t, err)
 	assert.ErrorIs(t, err, expectedErr)
+}
+
+func TestGetTopPlayersReturnsPagedResults(t *testing.T) {
+	gameRepo := &GameRepositoryInterfaceMock{
+		GetTopPlayersFunc: func(_ context.Context, filter gamerepo.TopPlayersFilter) ([]*gamerepo.TopPlayerStats, int, error) {
+			return []*gamerepo.TopPlayerStats{
+				{PlayerID: "id-1", PlayerLogin: "alice", GamesCount: 3, SumScore: 9, AvgScores: 3.0, WinsCount: 3, LossesCount: 0, DrawsCount: 0},
+				{PlayerID: "id-2", PlayerLogin: "bob", GamesCount: 2, SumScore: 4, AvgScores: 2.0, WinsCount: 1, LossesCount: 1, DrawsCount: 0},
+			}, 2, nil
+		},
+	}
+
+	svc := NewGameService(gameRepo, &questionRepoStub{}, stubUserLookup{})
+
+	result, err := svc.GetTopPlayers(context.Background(), TopPlayersInput{
+		Sort:       []string{"avgScores desc"},
+		PageNumber: 1,
+		PageSize:   10,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 2, result.TotalCount)
+	require.Len(t, result.Items, 2)
+	assert.Equal(t, "alice", result.Items[0].Player.Login)
+	assert.Equal(t, 3, result.Items[0].WinsCount)
+	assert.InDelta(t, 3.0, result.Items[0].AvgScores, 0.001)
+}
+
+func TestGetTopPlayersDefaultSortApplied(t *testing.T) {
+	var capturedFilter gamerepo.TopPlayersFilter
+	gameRepo := &GameRepositoryInterfaceMock{
+		GetTopPlayersFunc: func(_ context.Context, filter gamerepo.TopPlayersFilter) ([]*gamerepo.TopPlayerStats, int, error) {
+			capturedFilter = filter
+			return nil, 0, nil
+		},
+	}
+
+	svc := NewGameService(gameRepo, &questionRepoStub{}, stubUserLookup{})
+
+	_, err := svc.GetTopPlayers(context.Background(), TopPlayersInput{})
+	require.NoError(t, err)
+
+	// Empty sort slice is passed through to repo; repo applies default SQL ordering
+	assert.Empty(t, capturedFilter.Sort)
+	assert.Equal(t, 1, capturedFilter.PageNumber)
+	assert.Equal(t, 10, capturedFilter.PageSize)
 }

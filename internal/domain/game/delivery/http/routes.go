@@ -14,4 +14,8 @@ func RegisterRoutes(e *echo.Echo, h *Handler, authMiddleware echo.MiddlewareFunc
 
 	u := e.Group("/api/pair-game-quiz/users", authMiddleware)
 	u.GET("/my-statistic", h.GetMyStatistic)
+
+	// Public routes (no auth)
+	pub := e.Group("/api/pair-game-quiz/users")
+	pub.GET("/top", h.GetTopPlayers)
 }

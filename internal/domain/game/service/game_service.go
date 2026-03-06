@@ -62,6 +62,33 @@ type StatisticView struct {
 	DrawsCount  int
 }
 
+// TopPlayerView holds stats for one player in the leaderboard.
+type TopPlayerView struct {
+	Player      PlayerInfo
+	SumScore    int
+	AvgScores   float64
+	GamesCount  int
+	WinsCount   int
+	LossesCount int
+	DrawsCount  int
+}
+
+// TopPlayersInput holds pagination and sort params for GetTopPlayers.
+type TopPlayersInput struct {
+	Sort       []string
+	PageNumber int
+	PageSize   int
+}
+
+// PaginatedTopPlayersOutput is the paginated leaderboard result.
+type PaginatedTopPlayersOutput struct {
+	PagesCount int
+	Page       int
+	PageSize   int
+	TotalCount int
+	Items      []*TopPlayerView
+}
+
 // GameServiceInterface defines public operations for quiz game.
 type GameServiceInterface interface {
 	JoinOrCreateGame(ctx context.Context, playerID string) (*GameView, error)
@@ -70,6 +97,7 @@ type GameServiceInterface interface {
 	SubmitAnswer(ctx context.Context, playerID, answer string) (*AnswerSubmitResult, error)
 	GetMyGames(ctx context.Context, playerID string, input MyGamesInput) (*PaginatedGamesOutput, error)
 	GetMyStatistic(ctx context.Context, playerID string) (*StatisticView, error)
+	GetTopPlayers(ctx context.Context, input TopPlayersInput) (*PaginatedTopPlayersOutput, error)
 }
 
 // --- Output types ---
@@ -391,6 +419,55 @@ func (s *GameService) GetMyStatistic(ctx context.Context, playerID string) (*Sta
 		WinsCount:   stats.WinsCount,
 		LossesCount: stats.LossesCount,
 		DrawsCount:  stats.DrawsCount,
+	}, nil
+}
+
+// GetTopPlayers returns a paginated leaderboard of all players sorted by the given criteria.
+func (s *GameService) GetTopPlayers(ctx context.Context, input TopPlayersInput) (*PaginatedTopPlayersOutput, error) {
+	pageSize := input.PageSize
+	if pageSize < 1 || pageSize > 20 {
+		pageSize = 10
+	}
+	pageNumber := input.PageNumber
+	if pageNumber < 1 {
+		pageNumber = 1
+	}
+
+	filter := gamerepo.TopPlayersFilter{
+		Sort:       input.Sort,
+		PageNumber: pageNumber,
+		PageSize:   pageSize,
+	}
+
+	rows, total, err := s.gameRepo.GetTopPlayers(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("get top players: %w", err)
+	}
+
+	items := make([]*TopPlayerView, len(rows))
+	for i, r := range rows {
+		items[i] = &TopPlayerView{
+			Player:      PlayerInfo{ID: r.PlayerID, Login: r.PlayerLogin},
+			SumScore:    r.SumScore,
+			AvgScores:   r.AvgScores,
+			GamesCount:  r.GamesCount,
+			WinsCount:   r.WinsCount,
+			LossesCount: r.LossesCount,
+			DrawsCount:  r.DrawsCount,
+		}
+	}
+
+	pagesCount := 0
+	if total > 0 {
+		pagesCount = (total + pageSize - 1) / pageSize
+	}
+
+	return &PaginatedTopPlayersOutput{
+		PagesCount: pagesCount,
+		Page:       pageNumber,
+		PageSize:   pageSize,
+		TotalCount: total,
+		Items:      items,
 	}, nil
 }
 

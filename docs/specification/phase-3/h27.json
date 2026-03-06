@@ -1,0 +1,180 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "h27 API - V1",
+    "description": "✔ Add <b>TopUsers</b> endpoint",
+    "version": "h27"
+  },
+  "paths": {
+    "/hometask_27/api/pair-game-quiz/users/top": {
+      "get": {
+        "tags": [
+          "PairQuizGame"
+        ],
+        "summary": "Get users top",
+        "parameters": [
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": "?sort=avgScores desc&sort=sumScore desc"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "pageNumber is number of portions that should be returned",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize is portions size that should be returned",
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h27.TopGamePlayerViewModel>"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h27.TopGamePlayerViewModel>"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h27.TopGamePlayerViewModel>"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Paginator<h27.TopGamePlayerViewModel>": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "pagesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/h27.TopGamePlayerViewModel"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.PlayerViewModel": {
+        "required": [
+          "id",
+          "login"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "login": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h27.TopGamePlayerViewModel": {
+        "type": "object",
+        "properties": {
+          "sumScore": {
+            "type": "integer",
+            "description": "Sum scores of all games",
+            "format": "int32"
+          },
+          "avgScores": {
+            "type": "number",
+            "description": "Average score of all games rounded to 2 decimal places",
+            "format": "double"
+          },
+          "gamesCount": {
+            "type": "integer",
+            "description": "All played games count",
+            "format": "int32"
+          },
+          "winsCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lossesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "drawsCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "player": {
+            "$ref": "#/components/schemas/h25.PlayerViewModel"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "description": "Enter JWT Bearer token **_only_**",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "basic": {
+        "type": "http",
+        "scheme": "basic"
+      },
+      "refreshToken": {
+        "type": "apiKey",
+        "description": "JWT refreshToken inside cookie. Must be correct, and must not expire",
+        "name": "refreshToken",
+        "in": "cookie"
+      }
+    }
+  }
+}

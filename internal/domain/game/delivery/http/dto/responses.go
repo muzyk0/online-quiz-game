@@ -70,6 +70,26 @@ type StatisticResponse struct {
 	DrawsCount  int     `json:"drawsCount"`
 }
 
+// TopPlayerResponse is one entry in the leaderboard.
+type TopPlayerResponse struct {
+	SumScore    int                `json:"sumScore"`
+	AvgScores   float64            `json:"avgScores"`
+	GamesCount  int                `json:"gamesCount"`
+	WinsCount   int                `json:"winsCount"`
+	LossesCount int                `json:"lossesCount"`
+	DrawsCount  int                `json:"drawsCount"`
+	Player      PlayerInfoResponse `json:"player"`
+}
+
+// PaginatedTopPlayersResponse is the paginated leaderboard.
+type PaginatedTopPlayersResponse struct {
+	PagesCount int                  `json:"pagesCount"`
+	Page       int                  `json:"page"`
+	PageSize   int                  `json:"pageSize"`
+	TotalCount int                  `json:"totalCount"`
+	Items      []*TopPlayerResponse `json:"items"`
+}
+
 // ErrorResponse is a generic error body.
 type ErrorResponse struct {
 	Error string `json:"error"`
