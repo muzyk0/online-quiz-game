@@ -254,6 +254,9 @@ func (s *GameService) SubmitAnswer(ctx context.Context, playerID, answer string)
 	if err != nil {
 		return nil, fmt.Errorf("get questions: %w", err)
 	}
+	if answerCount >= len(questions) {
+		return nil, fmt.Errorf("invalid game state: answered=%d, questions=%d", answerCount, len(questions))
+	}
 	currentQuestion := questions[answerCount]
 
 	// Fetch correct answers for this question
@@ -432,7 +435,7 @@ func (s *GameService) recalculateScores(ctx context.Context, game *gamemodels.Qu
 			if p1Score > 0 {
 				p1Score++
 			}
-		} else {
+		} else if game.SecondPlayerFinishedAt.Time.Before(game.FirstPlayerFinishedAt.Time) {
 			if p2Score > 0 {
 				p2Score++
 			}
@@ -465,9 +468,15 @@ func (s *GameService) buildGameView(ctx context.Context, game *gamemodels.QuizGa
 	}
 
 	// First player progress
-	fp1Login, _ := s.users.GetLoginByID(ctx, game.FirstPlayerID)
+	fp1Login, err := s.users.GetLoginByID(ctx, game.FirstPlayerID)
+	if err != nil {
+		return nil, fmt.Errorf("get first player login: %w", err)
+	}
 	fp1ID, _ := game.FirstPlayerID.Value()
-	fp1Answers, _ := s.gameRepo.GetPlayerAnswers(ctx, game.ID, game.FirstPlayerID)
+	fp1Answers, err := s.gameRepo.GetPlayerAnswers(ctx, game.ID, game.FirstPlayerID)
+	if err != nil {
+		return nil, fmt.Errorf("get first player answers: %w", err)
+	}
 
 	view.FirstPlayerProgress = &PlayerProgress{
 		Player:  PlayerInfo{ID: fmt.Sprintf("%v", fp1ID), Login: fp1Login},
@@ -477,9 +486,15 @@ func (s *GameService) buildGameView(ctx context.Context, game *gamemodels.QuizGa
 
 	// Second player progress and questions: only when Active or Finished
 	if game.Status != gamemodels.GameStatusPending && game.SecondPlayerID.Valid {
-		fp2Login, _ := s.users.GetLoginByID(ctx, game.SecondPlayerID)
+		fp2Login, err := s.users.GetLoginByID(ctx, game.SecondPlayerID)
+		if err != nil {
+			return nil, fmt.Errorf("get second player login: %w", err)
+		}
 		fp2ID, _ := game.SecondPlayerID.Value()
-		fp2Answers, _ := s.gameRepo.GetPlayerAnswers(ctx, game.ID, game.SecondPlayerID)
+		fp2Answers, err := s.gameRepo.GetPlayerAnswers(ctx, game.ID, game.SecondPlayerID)
+		if err != nil {
+			return nil, fmt.Errorf("get second player answers: %w", err)
+		}
 
 		view.SecondPlayerProgress = &PlayerProgress{
 			Player:  PlayerInfo{ID: fmt.Sprintf("%v", fp2ID), Login: fp2Login},
@@ -488,7 +503,10 @@ func (s *GameService) buildGameView(ctx context.Context, game *gamemodels.QuizGa
 		}
 
 		// Questions (body only, no correctAnswers for security)
-		gameQuestions, _ := s.gameRepo.GetGameQuestions(ctx, game.ID)
+		gameQuestions, err := s.gameRepo.GetGameQuestions(ctx, game.ID)
+		if err != nil {
+			return nil, fmt.Errorf("get game questions: %w", err)
+		}
 		view.Questions = toQuestionViews(gameQuestions)
 	}
 
