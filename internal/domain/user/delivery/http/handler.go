@@ -1,9 +1,10 @@
 package http
 
 import (
+	"fmt"
 	nethttp "net/http"
+	"time"
 
-	"github.com/google/uuid"
 	"github.com/muzyk0/online-quiz-game/internal/domain/user/delivery/http/dto"
 	userservice "github.com/muzyk0/online-quiz-game/internal/domain/user/service"
 	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
@@ -54,7 +55,7 @@ func (h *Handler) Register(c echo.Context) error {
 		return apperrors.Internal("Could not generate access token").Wrap(err)
 	}
 
-	tokenID := uuid.New().String()
+	tokenID := fmt.Sprintf("%s-%d", user.ID, time.Now().Unix())
 	refreshToken, err := h.tokenManager.GenerateRefreshToken(user.ID, user.Email, "user", tokenID)
 	if err != nil {
 		return apperrors.Internal("Could not generate refresh token").Wrap(err)
@@ -98,7 +99,7 @@ func (h *Handler) Login(c echo.Context) error {
 		return apperrors.Internal("Could not generate access token").Wrap(err)
 	}
 
-	tokenID := uuid.New().String()
+	tokenID := fmt.Sprintf("%s-%d", user.ID, time.Now().Unix())
 	refreshToken, err := h.tokenManager.GenerateRefreshToken(user.ID, user.Email, "user", tokenID)
 	if err != nil {
 		return apperrors.Internal("Could not generate refresh token").Wrap(err)
