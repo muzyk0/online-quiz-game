@@ -48,12 +48,13 @@ func NewHandler(
 //	@Security		BearerAuth
 //	@Success		200	{object}	dto.MeResponse
 //	@Failure		401	{object}	map[string]string	"Unauthorized"
+//	@Failure		500	{object}	map[string]string	"Internal server error"
 //	@Router			/api/auth/me [get]
 func (h *Handler) GetMe(c echo.Context) error {
 	userID := auth.MustGetUserID(c)
 	user, err := h.userService.GetUser(c.Request().Context(), userID)
 	if err != nil {
-		return apperrors.Unauthorized("Unauthorized")
+		return mapAuthServiceError(err)
 	}
 	return c.JSON(http.StatusOK, dto.MeResponse{
 		Email:  user.Email,
