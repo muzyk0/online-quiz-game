@@ -80,9 +80,11 @@ if database.IsUniqueViolation(err) {
 
 The helper wraps `pgconn.PgError` + SQLSTATE `23505` so repositories don't need to import `pgconn` directly.
 
-### Rate limit middleware returns AppError
+### All handlers and middleware return AppError — never write directly
 
-`AuthRateLimitMiddleware` returns `*apperrors.AppError`, it does not write via `c.JSON`. Tests must assert through `require.ErrorAs`, not `rec.Code`:
+Every handler and middleware in this project returns `*apperrors.AppError` instead of writing to the response via `c.JSON`. `CustomHTTPErrorHandler` is the single exit point that serializes errors to the wire format.
+
+This means unit tests for middleware must assert via `require.ErrorAs`, not by checking `rec.Code`:
 
 ```go
 err := handler(c)

@@ -118,7 +118,9 @@ All handlers return `*apperrors.AppError` values. The centralized handler in `mi
 {"errorsMessages": [{"message": "...", "field": "..."}]}
 ```
 
-Never return raw `error` or `echo.HTTPError` from domain handlers — always use `apperrors.*` constructors.
+Never return raw `error` or `echo.HTTPError` from handlers **or middleware** — always use `apperrors.*` constructors. This applies universally: domain handlers, auth middleware, rate limiter, CORS, etc. `CustomHTTPErrorHandler` is the single exit point that serializes every error to the wire format.
+
+This means middleware tests must assert via `require.ErrorAs(t, err, &appErr)` rather than checking `rec.Code` — the error is returned, not written to the response directly.
 
 When `c.Bind(&req)` fails due to a JSON type mismatch (e.g. string sent for a bool field), detect `*json.UnmarshalTypeError` to return a field-specific error:
 
@@ -186,4 +188,3 @@ The canonical API spec is `docs/specification/h28.sa.json` (OpenAPI) and `docs/s
 See [`docs/dev/testing-patterns.md`](docs/dev/testing-patterns.md) for full details. Quick reference:
 - **`git restore <file>`** restores from index, not HEAD — use `git restore --source=HEAD <file>` after `git checkout <commit>^ -- <file>`.
 - **pgx UNIQUE violation**: use `database.IsUniqueViolation(err)` from `internal/app/database/pgxerrors.go`.
-- **Rate limit middleware** returns `*apperrors.AppError`, not writes via `c.JSON`.
