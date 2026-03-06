@@ -591,6 +591,72 @@ func TestGamePendingStateFields(t *testing.T) {
 	assert.Nil(t, game["finishGameDate"])
 }
 
+// TestConcurrentJoin verifies that two simultaneous connection requests do not
+// corrupt game state. The atomic FindPendingAndActivate (SELECT FOR UPDATE
+// SKIP LOCKED) guarantees that exactly one caller joins the existing pending
+// game and the other creates a fresh pending game — no 500/duplicate-key errors.
+func TestConcurrentJoin(t *testing.T) {
+	ts := newTestServer(t)
+	tokens := setup(t, ts, 3) // players A, B, C
+
+	// A creates the only pending game.
+	s, body := ts.connectToGame(t, tokens[0])
+	require.Equal(t, http.StatusOK, s, "A create: %s", body)
+	pendingGameID := mustUnmarshalGame(t, body)["id"].(string)
+
+	type joinResult struct {
+		statusCode int
+		gameID     string
+		gameStatus string
+	}
+
+	ch := make(chan joinResult, 2)
+
+	// B and C attempt to join concurrently.
+	for _, tok := range tokens[1:] {
+		tok := tok
+		go func() {
+			r := joinResult{}
+			// defer ensures the result is always sent even if t.FailNow is
+			// called inside connectToGame (runtime.Goexit still runs defers).
+			defer func() { ch <- r }()
+
+			s, b := ts.connectToGame(t, tok)
+			r.statusCode = s
+			if s == http.StatusOK {
+				var g map[string]any
+				if json.Unmarshal(b, &g) == nil {
+					r.gameID, _ = g["id"].(string)
+					r.gameStatus, _ = g["status"].(string)
+				}
+			}
+		}()
+	}
+
+	r1, r2 := <-ch, <-ch
+
+	// Both concurrent calls must succeed — no 500 from a duplicate-key race.
+	assert.Equal(t, http.StatusOK, r1.statusCode, "B connect should return 200")
+	assert.Equal(t, http.StatusOK, r2.statusCode, "C connect should return 200")
+
+	statuses := map[string]int{}
+	statuses[r1.gameStatus]++
+	statuses[r2.gameStatus]++
+
+	assert.Equal(t, 1, statuses["Active"], "exactly one joiner should activate the pending game")
+	assert.Equal(t, 1, statuses["PendingSecondPlayer"], "exactly one joiner should create a new pending game")
+
+	// The Active game must be A's original pending game; the Pending one must differ.
+	for _, r := range []joinResult{r1, r2} {
+		switch r.gameStatus {
+		case "Active":
+			assert.Equal(t, pendingGameID, r.gameID, "active game should be A's original game")
+		case "PendingSecondPlayer":
+			assert.NotEqual(t, pendingGameID, r.gameID, "new pending game should have a distinct ID")
+		}
+	}
+}
+
 // TestAnswerResponse verifies the POST /my-current/answers response shape.
 func TestAnswerResponse(t *testing.T) {
 	ts := newTestServer(t)
