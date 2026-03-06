@@ -73,12 +73,16 @@ func main() {
 	case "up":
 		if *steps == 0 {
 			err = m.Up()
+		} else if *steps < 0 {
+			log.Fatal("steps must be positive for 'up' action")
 		} else {
 			err = m.Steps(*steps)
 		}
 	case "down":
 		if *steps == 0 {
 			err = m.Down()
+		} else if *steps < 0 {
+			log.Fatal("steps must be positive for 'down' action")
 		} else {
 			err = m.Steps(-*steps)
 		}
