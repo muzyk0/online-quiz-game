@@ -46,6 +46,18 @@ go run cmd/migrate/main.go -action down
 migrate create -ext sql -dir internal/app/database/migrations <name>
 ```
 
+### E2E tests
+
+Require a running PostgreSQL database (`DATABASE_URL` env var). Tests auto-skip if DB is unreachable.
+
+```bash
+# Run all e2e tests (race detector + coverage + summary)
+make test-e2e
+
+# Run a single e2e test
+go test -tags e2e -v -run TestConcurrentJoin -timeout 60s ./test/e2e/
+```
+
 ## Environment Variables
 
 Required for non-development usage:
@@ -154,9 +166,24 @@ Two migration files:
 - `000001_init_schema` — `users` table with `login` (nullable varchar, unique), `email`, `password_hash`, etc.
 - `000004_quiz_schema` — `quiz_questions`, `quiz_games`, `quiz_game_questions`, `quiz_game_answers`.
 
+### Testing patterns
+
+See [`docs/dev/testing-patterns.md`](docs/dev/testing-patterns.md) for detailed patterns including:
+- Goroutine-safe channel pattern for concurrent e2e tests
+- TOCTOU race condition verification workflow
+- pgconn UNIQUE violation detection
+- `git restore --source=HEAD` gotcha
+
 ### Spec compliance
 
 The canonical API spec is `docs/specification/h28.sa.json` (OpenAPI) and `docs/specification/README.md`. Key constraints enforced in code:
 - `pageSize` max is **20** (capped in SA handlers for questions and users).
 - Login field pattern: `^[a-zA-Z0-9_-]*$`.
 - `GET /pair-game-quiz/pairs/my-current` returns 404 if no active/pending game.
+
+## Known Issues / Gotchas
+
+See [`docs/dev/testing-patterns.md`](docs/dev/testing-patterns.md) for full details. Quick reference:
+- **`git restore <file>`** restores from index, not HEAD — use `git restore --source=HEAD <file>` after `git checkout <commit>^ -- <file>`.
+- **pgx UNIQUE violation**: use `database.IsUniqueViolation(err)` from `internal/app/database/pgxerrors.go`.
+- **Rate limit middleware** returns `*apperrors.AppError`, not writes via `c.JSON`.

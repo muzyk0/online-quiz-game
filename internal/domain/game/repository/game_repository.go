@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/muzyk0/online-quiz-game/internal/app/database"
@@ -346,8 +345,7 @@ func (r *GameRepository) SaveAnswer(ctx context.Context, a models.QuizGameAnswer
 
 	var out models.QuizGameAnswer
 	if err := r.db.GetContext(ctx, &out, query, a.GameID, a.PlayerID, a.QuestionID, a.Answer, a.IsCorrect); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		if database.IsUniqueViolation(err) {
 			return nil, ErrAnswerDuplicate
 		}
 		return nil, fmt.Errorf("save answer: %w", err)
