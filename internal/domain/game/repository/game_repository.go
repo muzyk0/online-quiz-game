@@ -89,9 +89,7 @@ func (r *GameRepository) CreatePending(ctx context.Context, firstPlayerID pgtype
 }
 
 func (r *GameRepository) FindPending(ctx context.Context) (*models.QuizGame, error) {
-	// Use SELECT ... FOR UPDATE to lock the row and prevent race conditions
-	// when multiple players try to join the same pending game simultaneously
-	query := `SELECT ` + gameColumns + ` FROM quiz_games WHERE status = 'PendingSecondPlayer' ORDER BY created_at ASC LIMIT 1 FOR UPDATE`
+	query := `SELECT ` + gameColumns + ` FROM quiz_games WHERE status = 'PendingSecondPlayer' ORDER BY created_at ASC LIMIT 1`
 
 	var g models.QuizGame
 	if err := r.db.GetContext(ctx, &g, query); err != nil {
@@ -237,28 +235,14 @@ func (r *GameRepository) UpdateScoresAndFinish(ctx context.Context, g *models.Qu
 }
 
 func (r *GameRepository) AssignQuestions(ctx context.Context, gameID pgtype.UUID, questionIDs []pgtype.UUID) error {
-	// Use transaction to ensure atomicity: all questions inserted or none
-	tx, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin assign questions transaction: %w", err)
-	}
-
-	defer func() {
-		_ = tx.Rollback()
-	}()
-
 	for i, qID := range questionIDs {
-		_, err := tx.ExecContext(ctx,
+		_, err := r.db.ExecContext(ctx,
 			`INSERT INTO quiz_game_questions (game_id, question_id, order_index) VALUES ($1, $2, $3)`,
 			gameID, qID, i,
 		)
 		if err != nil {
 			return fmt.Errorf("assign question %d: %w", i, err)
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit assign questions transaction: %w", err)
 	}
 	return nil
 }

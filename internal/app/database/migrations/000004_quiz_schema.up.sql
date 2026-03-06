@@ -46,7 +46,7 @@ CREATE INDEX idx_quiz_games_status        ON quiz_games (status);
 CREATE TABLE quiz_game_questions (
     id          UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
     game_id     UUID    NOT NULL REFERENCES quiz_games(id) ON DELETE CASCADE,
-    question_id UUID    NOT NULL REFERENCES quiz_questions(id) ON DELETE CASCADE,
+    question_id UUID    NOT NULL REFERENCES quiz_questions(id),
     order_index INTEGER NOT NULL CHECK (order_index BETWEEN 0 AND 4),
     UNIQUE (game_id, order_index)
 );
@@ -61,7 +61,7 @@ CREATE TABLE quiz_game_answers (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     game_id     UUID        NOT NULL REFERENCES quiz_games(id) ON DELETE CASCADE,
     player_id   UUID        NOT NULL REFERENCES users(id),
-    question_id UUID        NOT NULL REFERENCES quiz_questions(id) ON DELETE CASCADE,
+    question_id UUID        NOT NULL REFERENCES quiz_questions(id),
     answer      TEXT        NOT NULL,
     is_correct  BOOLEAN     NOT NULL,
     answered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
