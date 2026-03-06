@@ -71,12 +71,18 @@ func main() {
 	// Execute migration based on action
 	switch *action {
 	case "up":
+		if *steps < 0 {
+			log.Fatalf("negative steps not allowed for 'up' action: %d", *steps)
+		}
 		if *steps == 0 {
 			err = m.Up()
 		} else {
 			err = m.Steps(*steps)
 		}
 	case "down":
+		if *steps < 0 {
+			log.Fatalf("negative steps not allowed for 'down' action: %d", *steps)
+		}
 		if *steps == 0 {
 			err = m.Down()
 		} else {

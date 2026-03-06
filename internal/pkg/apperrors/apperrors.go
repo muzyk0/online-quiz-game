@@ -71,7 +71,7 @@ func (e *AppError) Wrap(err error) *AppError {
 	return &AppError{
 		Code:    e.Code,
 		Message: e.Message,
-		Details: e.Details,
+		Details: copyDetails(e.Details),
 		Err:     err,
 	}
 }
@@ -81,7 +81,7 @@ func (e *AppError) WithMessage(msg string) *AppError {
 	return &AppError{
 		Code:    e.Code,
 		Message: msg,
-		Details: e.Details,
+		Details: copyDetails(e.Details),
 		Err:     e.Err,
 	}
 }
@@ -138,6 +138,18 @@ func NewValidationError(details map[string]string) *AppError {
 	return &AppError{
 		Code:    http.StatusBadRequest,
 		Message: "Validation failed",
-		Details: details,
+		Details: copyDetails(details),
 	}
+}
+
+// copyDetails returns a shallow copy of a Details map to prevent shared mutable state.
+func copyDetails(d map[string]string) map[string]string {
+	if d == nil {
+		return nil
+	}
+	out := make(map[string]string, len(d))
+	for k, v := range d {
+		out[k] = v
+	}
+	return out
 }

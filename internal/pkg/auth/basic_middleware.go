@@ -16,6 +16,13 @@ import (
 //	saMiddleware := auth.BasicAuthMiddleware(cfg.SAAdminLogin, cfg.SAAdminPassword)
 //	e.Group("/api/sa", saMiddleware)
 func BasicAuthMiddleware(login, password string) echo.MiddlewareFunc {
+	if login == "" || password == "" {
+		return func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				return apperrors.Internal("SA credentials not configured")
+			}
+		}
+	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			gotLogin, gotPassword, ok := c.Request().BasicAuth()

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -175,9 +176,12 @@ func TestAuthRateLimitMiddleware(t *testing.T) {
 		c := e.NewContext(req, rec)
 
 		err := handler(c)
-		require.NoError(t, err)
-		assert.Equal(t, http.StatusTooManyRequests, rec.Code)
-		assert.Contains(t, rec.Body.String(), "Too many requests")
+		require.Error(t, err)
+		var appErr *apperrors.AppError
+		require.ErrorAs(t, err, &appErr)
+		assert.Equal(t, http.StatusTooManyRequests, appErr.Code)
+		assert.Contains(t, appErr.Message, "Too many requests")
+		_ = rec
 	})
 }
 

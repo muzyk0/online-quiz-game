@@ -51,6 +51,10 @@ func NewUserRepository(db *database.DB) UserRepositoryInterface {
 
 const userColumns = `id, login, email, password_hash, first_name, last_name, avatar_url, is_verified, created_at, updated_at`
 
+// saUserColumns selects user fields for SA list endpoints, substituting NULL for
+// password_hash so the sensitive hash is never fetched over the wire.
+const saUserColumns = `id, login, email, NULL AS password_hash, first_name, last_name, avatar_url, is_verified, created_at, updated_at`
+
 // Create inserts a new user into the database
 func (r *UserRepository) Create(ctx context.Context, user models.User) (*models.User, error) {
 	isVerified := user.IsVerified
@@ -215,7 +219,7 @@ func (r *UserRepository) ListSA(ctx context.Context, f SAListFilter) ([]*models.
 
 	dataArgs := append(args, pageSize, offset)
 	dataQuery := fmt.Sprintf(
-		`SELECT `+userColumns+` FROM users %s ORDER BY %s %s LIMIT $%d OFFSET $%d`,
+		`SELECT `+saUserColumns+` FROM users %s ORDER BY %s %s LIMIT $%d OFFSET $%d`,
 		where, sortCol, sortDir, argIdx, argIdx+1,
 	)
 

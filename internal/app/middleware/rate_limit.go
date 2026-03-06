@@ -2,10 +2,11 @@ package middleware
 
 import (
 	"context"
-	"net/http"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
 
 	"github.com/labstack/echo/v4"
 )
@@ -150,9 +151,7 @@ func AuthRateLimitMiddleware(limiter *AuthRateLimiter, identifierFunc func(echo.
 			identifier := identifierFunc(c)
 
 			if !limiter.Allow(identifier) {
-				return c.JSON(http.StatusTooManyRequests, map[string]string{
-					"error": "Too many requests. Please try again later.",
-				})
+				return apperrors.TooManyRequests("Too many requests. Please try again later.")
 			}
 
 			// Add rate limit headers
