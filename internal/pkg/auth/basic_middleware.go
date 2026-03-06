@@ -18,6 +18,11 @@ import (
 func BasicAuthMiddleware(login, password string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			// Fail-closed: credentials must be configured
+			if login == "" || password == "" {
+				return apperrors.Unauthorized("SA credentials not configured")
+			}
+
 			gotLogin, gotPassword, ok := c.Request().BasicAuth()
 			if !ok {
 				c.Response().Header().Set("WWW-Authenticate", `Basic realm="SA API"`)
