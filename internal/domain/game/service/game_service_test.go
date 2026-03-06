@@ -67,22 +67,13 @@ func (s *questionRepoStub) ListPublished(ctx context.Context, limit int) ([]*que
 
 func TestGameServiceJoinOrCreateGameDoesNotActivateWithoutEnoughQuestions(t *testing.T) {
 	playerID := testUUID()
-	playerUUID := pgUUID(t, playerID)
-	pendingGameID := pgUUID(t, testUUID())
 
 	gameRepo := &GameRepositoryInterfaceMock{
 		IsPlayerInActiveGameFunc: func(context.Context, pgtype.UUID) (bool, error) {
 			return false, nil
 		},
-		FindPendingFunc: func(context.Context) (*gamemodels.QuizGame, error) {
-			return &gamemodels.QuizGame{
-				ID:            pendingGameID,
-				FirstPlayerID: playerUUID,
-				Status:        gamemodels.GameStatusPending,
-			}, nil
-		},
-		ActivateGameWithQuestionsFunc: func(context.Context, pgtype.UUID, pgtype.UUID, []pgtype.UUID) (*gamemodels.QuizGame, error) {
-			t.Fatal("pending game should not be activated when fewer than five questions exist")
+		FindPendingAndActivateFunc: func(context.Context, pgtype.UUID, []pgtype.UUID) (*gamemodels.QuizGame, error) {
+			t.Fatal("FindPendingAndActivate should not be called when fewer than five questions exist")
 			return nil, nil
 		},
 	}
@@ -107,22 +98,13 @@ func TestGameServiceJoinOrCreateGameDoesNotActivateWithoutEnoughQuestions(t *tes
 
 func TestGameServiceJoinOrCreateGamePropagatesAtomicActivationError(t *testing.T) {
 	playerID := testUUID()
-	playerUUID := pgUUID(t, playerID)
-	pendingGameID := pgUUID(t, testUUID())
 	expectedErr := errors.New("write failed")
 
 	gameRepo := &GameRepositoryInterfaceMock{
 		IsPlayerInActiveGameFunc: func(context.Context, pgtype.UUID) (bool, error) {
 			return false, nil
 		},
-		FindPendingFunc: func(context.Context) (*gamemodels.QuizGame, error) {
-			return &gamemodels.QuizGame{
-				ID:            pendingGameID,
-				FirstPlayerID: playerUUID,
-				Status:        gamemodels.GameStatusPending,
-			}, nil
-		},
-		ActivateGameWithQuestionsFunc: func(context.Context, pgtype.UUID, pgtype.UUID, []pgtype.UUID) (*gamemodels.QuizGame, error) {
+		FindPendingAndActivateFunc: func(context.Context, pgtype.UUID, []pgtype.UUID) (*gamemodels.QuizGame, error) {
 			return nil, expectedErr
 		},
 	}

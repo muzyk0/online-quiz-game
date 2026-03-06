@@ -41,9 +41,10 @@ type PlayerStats struct {
 type GameRepositoryInterface interface {
 	// Game lifecycle
 	CreatePending(ctx context.Context, firstPlayerID pgtype.UUID) (*models.QuizGame, error)
-	FindPending(ctx context.Context) (*models.QuizGame, error)
-	ActivateGame(ctx context.Context, gameID, secondPlayerID pgtype.UUID) (*models.QuizGame, error)
-	ActivateGameWithQuestions(ctx context.Context, gameID, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error)
+	// FindPendingAndActivate atomically finds the oldest pending game (with FOR UPDATE SKIP LOCKED),
+	// activates it, and assigns the given questions — all in one transaction.
+	// Returns nil, nil when no pending game is available.
+	FindPendingAndActivate(ctx context.Context, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error)
 	GetByID(ctx context.Context, id pgtype.UUID) (*models.QuizGame, error)
 	GetActiveByPlayerID(ctx context.Context, playerID pgtype.UUID) (*models.QuizGame, error)
 	IsPlayerInActiveGame(ctx context.Context, playerID pgtype.UUID) (bool, error)
@@ -160,6 +161,64 @@ func (r *GameRepository) ActivateGameWithQuestions(
 	}
 
 	return &g, nil
+}
+
+func (r *GameRepository) FindPendingAndActivate(
+	ctx context.Context,
+	secondPlayerID pgtype.UUID,
+	questionIDs []pgtype.UUID,
+) (*models.QuizGame, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin find-and-activate transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	// SKIP LOCKED: if another transaction is already activating a pending game,
+	// we skip it rather than waiting, so concurrent joiners don't queue up.
+	const findQuery = `SELECT ` + gameColumns + `
+		FROM quiz_games
+		WHERE status = 'PendingSecondPlayer'
+		ORDER BY created_at ASC
+		LIMIT 1
+		FOR UPDATE SKIP LOCKED`
+
+	var pending models.QuizGame
+	if err := tx.GetContext(ctx, &pending, findQuery); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // no available pending game
+		}
+		return nil, fmt.Errorf("find pending game: %w", err)
+	}
+
+	// Activate within the same transaction while the row lock is still held.
+	const activateQuery = `
+		UPDATE quiz_games
+		SET second_player_id = $2, status = 'Active', started_at = NOW()
+		WHERE id = $1 AND status = 'PendingSecondPlayer'
+		RETURNING ` + gameColumns
+
+	var activated models.QuizGame
+	if err := tx.GetContext(ctx, &activated, activateQuery, pending.ID, secondPlayerID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrGameNotFound
+		}
+		return nil, fmt.Errorf("activate game: %w", err)
+	}
+
+	for i, qID := range questionIDs {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO quiz_game_questions (game_id, question_id, order_index) VALUES ($1, $2, $3)`,
+			pending.ID, qID, i,
+		); err != nil {
+			return nil, fmt.Errorf("assign question %d: %w", i, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit find-and-activate transaction: %w", err)
+	}
+	return &activated, nil
 }
 
 func (r *GameRepository) GetByID(ctx context.Context, id pgtype.UUID) (*models.QuizGame, error) {

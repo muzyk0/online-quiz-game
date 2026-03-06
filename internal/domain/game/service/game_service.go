@@ -148,29 +148,26 @@ func (s *GameService) JoinOrCreateGame(ctx context.Context, playerID string) (*G
 		return nil, ErrAlreadyInGame
 	}
 
-	// Try to find a pending game to join
-	pending, err := s.gameRepo.FindPending(ctx)
+	// Load questions upfront so activation can be fully atomic.
+	questionIDs, err := s.loadRandomQuestionIDs(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("find pending game: %w", err)
+		return nil, err
 	}
 
-	if pending != nil {
-		questionIDs, err := s.loadRandomQuestionIDs(ctx)
-		if err != nil {
-			return nil, err
-		}
+	// Atomically find a pending game, lock it (SKIP LOCKED), activate it,
+	// and assign questions in one transaction. Returns nil if no pending game
+	// is available (another player grabbed it or none exists).
+	game, err := s.gameRepo.FindPendingAndActivate(ctx, pid, questionIDs)
+	if err != nil {
+		return nil, fmt.Errorf("find and activate game: %w", err)
+	}
 
-		// Activate this game and assign questions atomically.
-		game, err := s.gameRepo.ActivateGameWithQuestions(ctx, pending.ID, pid, questionIDs)
-		if err != nil {
-			return nil, fmt.Errorf("activate game: %w", err)
-		}
-
+	if game != nil {
 		return s.buildGameView(ctx, game, pid)
 	}
 
-	// No pending game: create one and wait
-	game, err := s.gameRepo.CreatePending(ctx, pid)
+	// No pending game available: create one and wait for a second player.
+	game, err = s.gameRepo.CreatePending(ctx, pid)
 	if err != nil {
 		return nil, fmt.Errorf("create pending game: %w", err)
 	}

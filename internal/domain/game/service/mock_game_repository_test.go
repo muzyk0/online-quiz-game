@@ -76,8 +76,8 @@ type GameRepositoryInterfaceMock struct {
 	// ActivateGameFunc mocks the ActivateGame method.
 	ActivateGameFunc func(ctx context.Context, gameID pgtype.UUID, secondPlayerID pgtype.UUID) (*models.QuizGame, error)
 
-	// ActivateGameWithQuestionsFunc mocks the ActivateGameWithQuestions method.
-	ActivateGameWithQuestionsFunc func(ctx context.Context, gameID pgtype.UUID, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error)
+	// FindPendingAndActivateFunc mocks the FindPendingAndActivate method.
+	FindPendingAndActivateFunc func(ctx context.Context, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error)
 
 	// AssignQuestionsFunc mocks the AssignQuestions method.
 	AssignQuestionsFunc func(ctx context.Context, gameID pgtype.UUID, questionIDs []pgtype.UUID) error
@@ -87,9 +87,6 @@ type GameRepositoryInterfaceMock struct {
 
 	// CreatePendingFunc mocks the CreatePending method.
 	CreatePendingFunc func(ctx context.Context, firstPlayerID pgtype.UUID) (*models.QuizGame, error)
-
-	// FindPendingFunc mocks the FindPending method.
-	FindPendingFunc func(ctx context.Context) (*models.QuizGame, error)
 
 	// GetActiveByPlayerIDFunc mocks the GetActiveByPlayerID method.
 	GetActiveByPlayerIDFunc func(ctx context.Context, playerID pgtype.UUID) (*models.QuizGame, error)
@@ -129,12 +126,10 @@ type GameRepositoryInterfaceMock struct {
 			// SecondPlayerID is the secondPlayerID argument value.
 			SecondPlayerID pgtype.UUID
 		}
-		// ActivateGameWithQuestions holds details about calls to the ActivateGameWithQuestions method.
-		ActivateGameWithQuestions []struct {
+		// FindPendingAndActivate holds details about calls to the FindPendingAndActivate method.
+		FindPendingAndActivate []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// GameID is the gameID argument value.
-			GameID pgtype.UUID
 			// SecondPlayerID is the secondPlayerID argument value.
 			SecondPlayerID pgtype.UUID
 			// QuestionIDs is the questionIDs argument value.
@@ -164,11 +159,6 @@ type GameRepositoryInterfaceMock struct {
 			Ctx context.Context
 			// FirstPlayerID is the firstPlayerID argument value.
 			FirstPlayerID pgtype.UUID
-		}
-		// FindPending holds details about calls to the FindPending method.
-		FindPending []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
 		}
 		// GetActiveByPlayerID holds details about calls to the GetActiveByPlayerID method.
 		GetActiveByPlayerID []struct {
@@ -239,11 +229,10 @@ type GameRepositoryInterfaceMock struct {
 		}
 	}
 	lockActivateGame              sync.RWMutex
-	lockActivateGameWithQuestions sync.RWMutex
+	lockFindPendingAndActivate    sync.RWMutex
 	lockAssignQuestions           sync.RWMutex
 	lockCountPlayerAnswers        sync.RWMutex
 	lockCreatePending             sync.RWMutex
-	lockFindPending               sync.RWMutex
 	lockGetActiveByPlayerID       sync.RWMutex
 	lockGetAllByPlayerID          sync.RWMutex
 	lockGetByID                   sync.RWMutex
@@ -295,47 +284,43 @@ func (mock *GameRepositoryInterfaceMock) ActivateGameCalls() []struct {
 	return calls
 }
 
-// ActivateGameWithQuestions calls ActivateGameWithQuestionsFunc.
-func (mock *GameRepositoryInterfaceMock) ActivateGameWithQuestions(ctx context.Context, gameID pgtype.UUID, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error) {
-	if mock.ActivateGameWithQuestionsFunc == nil {
-		panic("GameRepositoryInterfaceMock.ActivateGameWithQuestionsFunc: method is nil but GameRepositoryInterface.ActivateGameWithQuestions was just called")
+// FindPendingAndActivate calls FindPendingAndActivateFunc.
+func (mock *GameRepositoryInterfaceMock) FindPendingAndActivate(ctx context.Context, secondPlayerID pgtype.UUID, questionIDs []pgtype.UUID) (*models.QuizGame, error) {
+	if mock.FindPendingAndActivateFunc == nil {
+		panic("GameRepositoryInterfaceMock.FindPendingAndActivateFunc: method is nil but GameRepositoryInterface.FindPendingAndActivate was just called")
 	}
 	callInfo := struct {
 		Ctx            context.Context
-		GameID         pgtype.UUID
 		SecondPlayerID pgtype.UUID
 		QuestionIDs    []pgtype.UUID
 	}{
 		Ctx:            ctx,
-		GameID:         gameID,
 		SecondPlayerID: secondPlayerID,
 		QuestionIDs:    questionIDs,
 	}
-	mock.lockActivateGameWithQuestions.Lock()
-	mock.calls.ActivateGameWithQuestions = append(mock.calls.ActivateGameWithQuestions, callInfo)
-	mock.lockActivateGameWithQuestions.Unlock()
-	return mock.ActivateGameWithQuestionsFunc(ctx, gameID, secondPlayerID, questionIDs)
+	mock.lockFindPendingAndActivate.Lock()
+	mock.calls.FindPendingAndActivate = append(mock.calls.FindPendingAndActivate, callInfo)
+	mock.lockFindPendingAndActivate.Unlock()
+	return mock.FindPendingAndActivateFunc(ctx, secondPlayerID, questionIDs)
 }
 
-// ActivateGameWithQuestionsCalls gets all the calls that were made to ActivateGameWithQuestions.
+// FindPendingAndActivateCalls gets all the calls that were made to FindPendingAndActivate.
 // Check the length with:
 //
-//	len(mockedGameRepositoryInterface.ActivateGameWithQuestionsCalls())
-func (mock *GameRepositoryInterfaceMock) ActivateGameWithQuestionsCalls() []struct {
+//	len(mockedGameRepositoryInterface.FindPendingAndActivateCalls())
+func (mock *GameRepositoryInterfaceMock) FindPendingAndActivateCalls() []struct {
 	Ctx            context.Context
-	GameID         pgtype.UUID
 	SecondPlayerID pgtype.UUID
 	QuestionIDs    []pgtype.UUID
 } {
 	var calls []struct {
 		Ctx            context.Context
-		GameID         pgtype.UUID
 		SecondPlayerID pgtype.UUID
 		QuestionIDs    []pgtype.UUID
 	}
-	mock.lockActivateGameWithQuestions.RLock()
-	calls = mock.calls.ActivateGameWithQuestions
-	mock.lockActivateGameWithQuestions.RUnlock()
+	mock.lockFindPendingAndActivate.RLock()
+	calls = mock.calls.FindPendingAndActivate
+	mock.lockFindPendingAndActivate.RUnlock()
 	return calls
 }
 
@@ -456,37 +441,6 @@ func (mock *GameRepositoryInterfaceMock) CreatePendingCalls() []struct {
 }
 
 // FindPending calls FindPendingFunc.
-func (mock *GameRepositoryInterfaceMock) FindPending(ctx context.Context) (*models.QuizGame, error) {
-	if mock.FindPendingFunc == nil {
-		panic("GameRepositoryInterfaceMock.FindPendingFunc: method is nil but GameRepositoryInterface.FindPending was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockFindPending.Lock()
-	mock.calls.FindPending = append(mock.calls.FindPending, callInfo)
-	mock.lockFindPending.Unlock()
-	return mock.FindPendingFunc(ctx)
-}
-
-// FindPendingCalls gets all the calls that were made to FindPending.
-// Check the length with:
-//
-//	len(mockedGameRepositoryInterface.FindPendingCalls())
-func (mock *GameRepositoryInterfaceMock) FindPendingCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockFindPending.RLock()
-	calls = mock.calls.FindPending
-	mock.lockFindPending.RUnlock()
-	return calls
-}
-
 // GetActiveByPlayerID calls GetActiveByPlayerIDFunc.
 func (mock *GameRepositoryInterfaceMock) GetActiveByPlayerID(ctx context.Context, playerID pgtype.UUID) (*models.QuizGame, error) {
 	if mock.GetActiveByPlayerIDFunc == nil {
