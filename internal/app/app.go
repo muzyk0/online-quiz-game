@@ -114,7 +114,9 @@ func (a *App) initServer() {
 	userhttp.RegisterSARoutes(e, a.saUserHandler, saMiddleware)
 	questionhttp.RegisterRoutes(e, a.questionHandler, saMiddleware)
 	gamehttp.RegisterRoutes(e, a.gameHandler, authMiddleware)
-	testinghttp.RegisterRoutes(e, a.testingHandler)
+	if a.cfg.ServerEnv == "test" {
+		testinghttp.RegisterRoutes(e, a.testingHandler)
+	}
 }
 
 func (a *App) Run() error {

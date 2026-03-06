@@ -53,7 +53,7 @@ func (h *Handler) GetMe(c echo.Context) error {
 	userID := auth.MustGetUserID(c)
 	user, err := h.userService.GetUser(c.Request().Context(), userID)
 	if err != nil {
-		return apperrors.Unauthorized("Unauthorized")
+		return mapAuthServiceError(err)
 	}
 	return c.JSON(http.StatusOK, dto.MeResponse{
 		Email:  user.Email,
@@ -100,6 +100,9 @@ func (h *Handler) Refresh(c echo.Context) error {
 	// Validate refresh token
 	claims, err := h.tokenManager.ValidateRefreshToken(refreshToken)
 	if err != nil {
+		return apperrors.Unauthorized("Invalid or expired refresh token")
+	}
+	if claims.TokenID == "" {
 		return apperrors.Unauthorized("Invalid or expired refresh token")
 	}
 

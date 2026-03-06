@@ -49,6 +49,13 @@ func Load() *Config {
 		log.Println("WARNING: Using generated temporary JWT secret for development. Set JWT_SECRET for persistence.")
 	}
 
+	saAdminLogin := getEnvOrDefault("SA_ADMIN_LOGIN", "admin")
+	saAdminPassword := getEnvOrDefault("SA_ADMIN_PASSWORD", "admin")
+
+	if serverEnv != "development" && (saAdminLogin == "admin" || saAdminPassword == "admin") {
+		log.Fatal("SA_ADMIN_LOGIN and SA_ADMIN_PASSWORD must not use default values in non-development environments")
+	}
+
 	return &Config{
 		ServerHost: getEnvOrDefault("SERVER_HOST", "localhost"),
 		ServerPort: getIntEnvOrDefault("SERVER_PORT", 8080),
@@ -66,8 +73,8 @@ func Load() *Config {
 		CorsAllowedOrigins: getSliceEnvOrDefault("CORS_ALLOWED_ORIGINS", []string{
 			"http://localhost:3000",
 		}),
-		SAAdminLogin:    getEnvOrDefault("SA_ADMIN_LOGIN", "admin"),
-		SAAdminPassword: getEnvOrDefault("SA_ADMIN_PASSWORD", "admin"),
+		SAAdminLogin:    saAdminLogin,
+		SAAdminPassword: saAdminPassword,
 	}
 }
 
