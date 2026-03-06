@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/muzyk0/online-quiz-game/internal/domain/question/service"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
 )
 
 func mapQuestionError(err error) error {

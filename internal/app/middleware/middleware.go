@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

@@ -8,7 +8,7 @@ import (
 
 	"github.com/muzyk0/online-quiz-game/internal/domain/game/delivery/http/dto"
 	"github.com/muzyk0/online-quiz-game/internal/domain/game/service"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/auth"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/auth"
 )
 
 // Handler handles HTTP requests for the quiz pair game.

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

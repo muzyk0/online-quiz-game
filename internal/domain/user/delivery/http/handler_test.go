@@ -13,10 +13,10 @@ import (
 	"github.com/muzyk0/online-quiz-game/internal/domain/user/delivery/http/dto"
 	userservice "github.com/muzyk0/online-quiz-game/internal/domain/user/service"
 
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/auth"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/helpers"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/validation"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/auth"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/helpers"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/validation"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"

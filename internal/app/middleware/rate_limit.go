@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
 
 	"github.com/labstack/echo/v4"
 )

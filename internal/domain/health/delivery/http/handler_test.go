@@ -9,7 +9,7 @@ import (
 
 	"github.com/muzyk0/online-quiz-game/internal/app/database"
 	"github.com/muzyk0/online-quiz-game/internal/app/middleware"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"

@@ -10,7 +10,7 @@ import (
 
 	"github.com/muzyk0/online-quiz-game/internal/domain/question/delivery/http/dto"
 	"github.com/muzyk0/online-quiz-game/internal/domain/question/service"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
 )
 
 // Handler handles SA HTTP requests for quiz questions.

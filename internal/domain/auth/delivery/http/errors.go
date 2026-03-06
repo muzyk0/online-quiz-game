@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	userservice "github.com/muzyk0/online-quiz-game/internal/domain/user/service"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
 )
 
 // mapAuthServiceError converts auth-related service errors to AppErrors

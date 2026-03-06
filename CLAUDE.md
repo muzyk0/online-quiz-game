@@ -17,7 +17,7 @@ go run ./cmd/server/
 go test ./...
 
 # Run a single test
-go test ./internal/pkg/apperrors/... -run TestAppError
+go test ./internal/platform/http/apperrors/... -run TestAppError
 go test ./internal/domain/user/service/... -run TestUserService_GetByID
 
 # Run tests with verbose output
@@ -95,12 +95,14 @@ internal/
 │   ├── health/             # GET /healthz
 │   ├── question/           # SA CRUD for quiz questions
 │   └── user/               # Player registration/profile + SA user management
+├── platform/
+│   └── http/
+│       ├── apperrors/      # Unified AppError type with HTTP codes
+│       ├── auth/           # JWT token manager, BasicAuth middleware, CodeStore
+│       ├── helpers/        # UUID gen, request helpers, testutil
+│       └── validation/     # go-playground/validator wrapper with custom tags
 └── pkg/
-    ├── apperrors/          # Unified AppError type with HTTP codes
-    ├── auth/               # JWT token manager, BasicAuth middleware, CodeStore
-    ├── helpers/            # UUID gen, request helpers, testutil
-    ├── logger/             # Structured JSON logger
-    └── validation/         # go-playground/validator wrapper with custom tags
+    └── logger/             # Structured JSON logger (layer-agnostic)
 ```
 
 ### Authentication
@@ -147,7 +149,7 @@ Struct validation uses `go-playground/validator/v10` with a custom wrapper. Cust
 
 Call `c.Validate(&req)` in handlers; the validator returns `*apperrors.AppError` with field-level details.
 
-`internal/pkg/validation/validator.go` uses `RegisterTagNameFunc` so validation error field names use JSON tag names (`"body"`, `"loginOrEmail"`) instead of Go struct field names (`"Body"`, `"LoginOrEmail"`). This is required for spec-compliant error responses.
+`internal/platform/http/validation/validator.go` uses `RegisterTagNameFunc` so validation error field names use JSON tag names (`"body"`, `"loginOrEmail"`) instead of Go struct field names (`"Body"`, `"LoginOrEmail"`). This is required for spec-compliant error responses.
 
 ### API Patterns
 

@@ -6,9 +6,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/muzyk0/online-quiz-game/internal/domain/user/delivery/http/dto"
 	userservice "github.com/muzyk0/online-quiz-game/internal/domain/user/service"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/auth"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/helpers"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/auth"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/helpers"
 
 	"github.com/labstack/echo/v4"
 )

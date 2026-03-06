@@ -10,9 +10,9 @@ import (
 
 	"github.com/muzyk0/online-quiz-game/internal/domain/auth/delivery/http/dto"
 	userservice "github.com/muzyk0/online-quiz-game/internal/domain/user/service"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/auth"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/helpers"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/apperrors"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/auth"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/helpers"
 )
 
 // UserServiceInterface defines what the auth handler needs from the user domain.

@@ -32,8 +32,8 @@ import (
 	userhttp "github.com/muzyk0/online-quiz-game/internal/domain/user/delivery/http"
 	userrepo "github.com/muzyk0/online-quiz-game/internal/domain/user/repository"
 	userservice "github.com/muzyk0/online-quiz-game/internal/domain/user/service"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/auth"
-	"github.com/muzyk0/online-quiz-game/internal/pkg/validation"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/auth"
+	"github.com/muzyk0/online-quiz-game/internal/platform/http/validation"
 	"github.com/stretchr/testify/require"
 )
 
