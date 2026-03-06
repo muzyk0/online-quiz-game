@@ -70,8 +70,8 @@ func TestGameServiceJoinOrCreateGameDoesNotActivateWithoutEnoughQuestions(t *tes
 	playerID := testUUID()
 
 	gameRepo := &GameRepositoryInterfaceMock{
-		IsPlayerInActiveGameFunc: func(context.Context, pgtype.UUID) (bool, error) {
-			return false, nil
+		GetActiveByPlayerIDFunc: func(context.Context, pgtype.UUID) (*gamemodels.QuizGame, error) {
+			return nil, gamerepo.ErrGameNotFound
 		},
 		FindPendingAndActivateFunc: func(context.Context, pgtype.UUID, []pgtype.UUID) (*gamemodels.QuizGame, error) {
 			t.Fatal("FindPendingAndActivate should not be called when fewer than five questions exist")
@@ -102,8 +102,8 @@ func TestGameServiceJoinOrCreateGamePropagatesAtomicActivationError(t *testing.T
 	expectedErr := errors.New("write failed")
 
 	gameRepo := &GameRepositoryInterfaceMock{
-		IsPlayerInActiveGameFunc: func(context.Context, pgtype.UUID) (bool, error) {
-			return false, nil
+		GetActiveByPlayerIDFunc: func(context.Context, pgtype.UUID) (*gamemodels.QuizGame, error) {
+			return nil, gamerepo.ErrGameNotFound
 		},
 		FindPendingAndActivateFunc: func(context.Context, pgtype.UUID, []pgtype.UUID) (*gamemodels.QuizGame, error) {
 			return nil, expectedErr

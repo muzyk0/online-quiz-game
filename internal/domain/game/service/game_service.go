@@ -17,6 +17,10 @@ import (
 
 const questionsPerGame = 5
 
+// gameFinishTimeout is the time a player has to answer remaining questions
+// after the other player has answered all questions.
+const gameFinishTimeout = 10 * time.Second
+
 // Sentinel errors
 var (
 	ErrGameNotFound         = errors.New("game not found")
@@ -167,13 +171,19 @@ func (s *GameService) JoinOrCreateGame(ctx context.Context, playerID string) (*G
 		return nil, ErrAccessDenied
 	}
 
-	// Reject if already in an active/pending game
-	inGame, err := s.gameRepo.IsPlayerInActiveGame(ctx, pid)
-	if err != nil {
+	// Reject if already in an active/pending game (auto-finish expired games first)
+	existingGame, err := s.gameRepo.GetActiveByPlayerID(ctx, pid)
+	if err == nil {
+		existingGame, err = s.checkAndAutoFinish(ctx, existingGame)
+		if err != nil {
+			return nil, fmt.Errorf("check expired game: %w", err)
+		}
+		if existingGame.Status != gamemodels.GameStatusFinished {
+			return nil, ErrAlreadyInGame
+		}
+		// Game was auto-finished; player can now join a new game.
+	} else if !errors.Is(err, gamerepo.ErrGameNotFound) {
 		return nil, fmt.Errorf("check active game: %w", err)
-	}
-	if inGame {
-		return nil, ErrAlreadyInGame
 	}
 
 	// Load questions upfront so activation can be fully atomic.
@@ -216,6 +226,13 @@ func (s *GameService) GetMyCurrentGame(ctx context.Context, playerID string) (*G
 		}
 		return nil, fmt.Errorf("get active game: %w", err)
 	}
+	game, err = s.checkAndAutoFinish(ctx, game)
+	if err != nil {
+		return nil, err
+	}
+	if game.Status == gamemodels.GameStatusFinished {
+		return nil, ErrGameNotFound
+	}
 	return s.buildGameView(ctx, game, pid)
 }
 
@@ -243,6 +260,11 @@ func (s *GameService) GetGameByID(ctx context.Context, gameID, playerID string) 
 		return nil, ErrAccessDenied
 	}
 
+	game, err = s.checkAndAutoFinish(ctx, game)
+	if err != nil {
+		return nil, err
+	}
+
 	return s.buildGameView(ctx, game, pid)
 }
 
@@ -260,6 +282,10 @@ func (s *GameService) SubmitAnswer(ctx context.Context, playerID, answer string)
 			return nil, ErrGameNotActive // player is not in any active game → 403
 		}
 		return nil, fmt.Errorf("get active game: %w", err)
+	}
+	game, err = s.checkAndAutoFinish(ctx, game)
+	if err != nil {
+		return nil, err
 	}
 	if game.Status != gamemodels.GameStatusActive {
 		return nil, ErrGameNotActive
@@ -518,6 +544,55 @@ func (s *GameService) recalculateScores(ctx context.Context, game *gamemodels.Qu
 
 	game.FirstPlayerScore = p1Score
 	game.SecondPlayerScore = p2Score
+	return game, nil
+}
+
+// checkAndAutoFinish auto-finishes an Active game if one player has completed all
+// questions and the 10-second deadline for the other player has elapsed.
+// Unanswered questions count as incorrect (no DB records = score 0).
+func (s *GameService) checkAndAutoFinish(ctx context.Context, game *gamemodels.QuizGame) (*gamemodels.QuizGame, error) {
+	if game.Status != gamemodels.GameStatusActive {
+		return game, nil
+	}
+
+	fp1Done := game.FirstPlayerFinishedAt.Valid
+	fp2Done := game.SecondPlayerFinishedAt.Valid
+	// Need exactly one player to have finished for the timer to apply.
+	if fp1Done == fp2Done {
+		return game, nil
+	}
+
+	var finishTime time.Time
+	if fp1Done {
+		finishTime = game.FirstPlayerFinishedAt.Time
+	} else {
+		finishTime = game.SecondPlayerFinishedAt.Time
+	}
+
+	if time.Since(finishTime) < gameFinishTimeout {
+		return game, nil
+	}
+
+	// Deadline passed: set the other player's finished time to deadline and auto-finish.
+	deadline := pgtype.Timestamptz{Time: finishTime.Add(gameFinishTimeout), Valid: true}
+	if !fp1Done {
+		game.FirstPlayerFinishedAt = deadline
+	} else {
+		game.SecondPlayerFinishedAt = deadline
+	}
+
+	var err error
+	game, err = s.recalculateScores(ctx, game)
+	if err != nil {
+		return nil, err
+	}
+
+	game.Status = gamemodels.GameStatusFinished
+	game.FinishedAt = pgtype.Timestamptz{Time: time.Now(), Valid: true}
+
+	if err := s.gameRepo.UpdateScoresAndFinish(ctx, game); err != nil {
+		return nil, fmt.Errorf("auto-finish expired game: %w", err)
+	}
 	return game, nil
 }
 

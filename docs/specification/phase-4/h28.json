@@ -1,0 +1,1497 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "h28 API - V1",
+    "description": "No changes in API. But there are a changes in quiz logic.\n<br><br>\nIf some player finished all questions,\nthan second player has 10 seconds to answer to all questions\n<br><br>\nOtherwise the game will be finished and all unanswered questions will be marked as incorrect\n",
+    "version": "h28"
+  },
+  "paths": {
+    "/hometask_28/api/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Try login user to the system",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.LoginInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.LoginInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.LoginInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns JWT accessToken (expired after 5 minutes) in body and JWT refreshToken in cookie (http-only, secure) (expired after 24 hours).",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h06.db.LoginSuccessViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h06.db.LoginSuccessViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h06.db.LoginSuccessViewModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the inputModel has incorrect values",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the password or login is wrong"
+          },
+          "429": {
+            "description": "More than 5 attempts from one IP-address during 10 seconds"
+          }
+        }
+      }
+    },
+    "/hometask_28/api/auth/password-recovery": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Password recovery via Email confirmation. Email should be sent with RecoveryCode inside",
+        "requestBody": {
+          "description": "Email",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h10.PasswordRecoveryInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h10.PasswordRecoveryInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h10.PasswordRecoveryInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Even if current email is not registered (for prevent user's email detection)"
+          },
+          "400": {
+            "description": "If the inputModel has invalid email (for example 222^gmail.com)"
+          },
+          "429": {
+            "description": "More than 5 attempts from one IP-address during 10 seconds"
+          }
+        }
+      }
+    },
+    "/hometask_28/api/auth/new-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Confirm Password recovery",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h10.NewPasswordRecoveryInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h10.NewPasswordRecoveryInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h10.NewPasswordRecoveryInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "If code is valid and new password is accepted"
+          },
+          "400": {
+            "description": "If the inputModel has incorrect value (for incorrect password length) or RecoveryCode is incorrect or expired"
+          },
+          "429": {
+            "description": "More than 5 attempts from one IP-address during 10 seconds"
+          }
+        }
+      }
+    },
+    "/hometask_28/api/auth/refresh-token": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Generate new pair of access and refresh tokens (in cookie client must send correct refreshToken that will be revoked after refreshing)\r\nDevice LastActiveDate should be overrode by issued Date of new refresh token",
+        "responses": {
+          "200": {
+            "description": "Returns JWT accessToken (expired after 10 seconds) in body and JWT refreshToken in cookie (http-only, secure) (expired after 20 seconds).",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h06.db.LoginSuccessViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h06.db.LoginSuccessViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h06.db.LoginSuccessViewModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "refreshToken": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:refreshToken"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/auth/registration-confirmation": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Confirm registration",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h07.RegistrationConfirmationCodeModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h07.RegistrationConfirmationCodeModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h07.RegistrationConfirmationCodeModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Email was verified. Account was activated"
+          },
+          "400": {
+            "description": "If the confirmation code is incorrect, expired or already been applied",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 5 attempts from one IP-address during 10 seconds"
+          }
+        }
+      }
+    },
+    "/hometask_28/api/auth/registration": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Registration in the system. Email with confirmation code will be send to passed email address",
+        "requestBody": {
+          "description": "Data for registration",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.UserInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.UserInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.UserInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Input data is accepted. Email with confirmation code will be send to passed email address"
+          },
+          "400": {
+            "description": "If the inputModel has incorrect values (in particular if the user with the given email or login already exists)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 5 attempts from one IP-address during 10 seconds"
+          }
+        }
+      }
+    },
+    "/hometask_28/api/auth/registration-email-resending": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Resend confirmation registration Email if user exists",
+        "requestBody": {
+          "description": "Data for constructing new user",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h07.RegistrationEmailResending"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h07.RegistrationEmailResending"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h07.RegistrationEmailResending"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Input data is accepted.Email with confirmation code will be send to passed email address.Confirmation code should be inside link as query param, for example: https://some-front.com/confirm-registration?code=youtcodehere"
+          },
+          "400": {
+            "description": "If the inputModel has incorrect values",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 5 attempts from one IP-address during 10 seconds"
+          }
+        }
+      }
+    },
+    "/hometask_28/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "In cookie client must send correct refreshToken that will be revoked",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "refreshToken": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:refreshToken"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get information about current user",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h06.db.MeViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h06.db.MeViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h06.db.MeViewModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/pair-game-quiz/users/top": {
+      "get": {
+        "tags": [
+          "PairQuizGame"
+        ],
+        "summary": "Get users top",
+        "parameters": [
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": "?sort=avgScores desc&sort=sumScore desc"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "pageNumber is number of portions that should be returned",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize is portions size that should be returned",
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h27.TopGamePlayerViewModel>"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h27.TopGamePlayerViewModel>"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h27.TopGamePlayerViewModel>"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hometask_28/api/pair-game-quiz/pairs/my": {
+      "get": {
+        "tags": [
+          "PairQuizGame"
+        ],
+        "summary": "Returns all my games (closed games and current)",
+        "parameters": [
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "pairCreatedDate"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "description": "Default value: desc",
+            "schema": {
+              "$ref": "#/components/schemas/h04.SortDirections"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "pageNumber is number of portions that should be returned",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize is portions size that should be returned",
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns pair by id if current user is taking part in this pair",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h25.GamePairViewModel>"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h25.GamePairViewModel>"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h25.GamePairViewModel>"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/pair-game-quiz/users/my-statistic": {
+      "get": {
+        "tags": [
+          "PairQuizGame"
+        ],
+        "summary": "Get current user statistic",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h26.MyStatisticViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h26.MyStatisticViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h26.MyStatisticViewModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/pair-game-quiz/pairs/my-current": {
+      "get": {
+        "tags": [
+          "PairQuizGame"
+        ],
+        "summary": "Returns current unfinished user game",
+        "responses": {
+          "200": {
+            "description": "Returns current pair in which current user is taking part",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.GamePairViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.GamePairViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.GamePairViewModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "If no active pair for current user"
+          }
+        },
+        "security": [
+          {
+            "bearer": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/pair-game-quiz/pairs/{id}": {
+      "get": {
+        "tags": [
+          "PairQuizGame"
+        ],
+        "summary": "Returns game by id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns pair by id",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.GamePairViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.GamePairViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.GamePairViewModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If id has invalid format",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "If current user tries to get pair in which user is not participant"
+          },
+          "404": {
+            "description": "If game not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/pair-game-quiz/pairs/connection": {
+      "post": {
+        "tags": [
+          "PairQuizGame"
+        ],
+        "summary": "Connect current user to existing random pending pair or create new pair which will be waiting second player",
+        "responses": {
+          "200": {
+            "description": "Returns started existing pair or new pair with status \"PendingSecondPlayer\"",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.GamePairViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.GamePairViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.GamePairViewModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "If current user is already participating in active pair"
+          }
+        },
+        "security": [
+          {
+            "bearer": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/pair-game-quiz/pairs/my-current/answers": {
+      "post": {
+        "tags": [
+          "PairQuizGame"
+        ],
+        "summary": "Send answer for next not answered question in active pair",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.AnswerInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.AnswerInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h25.AnswerInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns answer result",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.AnswerViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.AnswerViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h25.AnswerViewModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "If current user is not inside active pair or user is in active pair but has already answered to all questions"
+          }
+        },
+        "security": [
+          {
+            "bearer": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/security/devices": {
+      "get": {
+        "tags": [
+          "SecurityDevices"
+        ],
+        "summary": "Returns all devices with active sessions for current user",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/h09.DeviceViewModel"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/h09.DeviceViewModel"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/h09.DeviceViewModel"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "refreshToken": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:refreshToken"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "SecurityDevices"
+        ],
+        "summary": "Terminate all other (exclude current) device's sessions",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "refreshToken": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:refreshToken"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/security/devices/{deviceId}": {
+      "delete": {
+        "tags": [
+          "SecurityDevices"
+        ],
+        "summary": "Terminate specified device session",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "description": "Id of session that will be terminated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "If try to delete the deviceId of other user"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "refreshToken": [
+              "Policy:",
+              "Roles:",
+              "AuthenticationSchemes:refreshToken"
+            ]
+          }
+        ]
+      }
+    },
+    "/hometask_28/api/testing/all-data": {
+      "delete": {
+        "tags": [
+          "Testing"
+        ],
+        "summary": "Clear database: delete all data from all tables/collections",
+        "responses": {
+          "204": {
+            "description": "All data is deleted"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIErrorResult": {
+        "type": "object",
+        "properties": {
+          "errorsMessages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FieldError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Message with error explanation for certain field",
+            "nullable": true
+          },
+          "field": {
+            "type": "string",
+            "description": "What field/property of input model has error",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Paginator<h25.GamePairViewModel>": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "pagesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/h25.GamePairViewModel"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Paginator<h27.TopGamePlayerViewModel>": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "pagesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/h27.TopGamePlayerViewModel"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "h04.SortDirections": {
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "type": "string"
+      },
+      "h05.db.LoginInputModel": {
+        "required": [
+          "loginOrEmail",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "loginOrEmail": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h05.db.UserInputModel": {
+        "required": [
+          "email",
+          "login",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "login": {
+            "maxLength": 10,
+            "minLength": 3,
+            "pattern": "^[a-zA-Z0-9_-]*$",
+            "type": "string",
+            "description": "must be unique"
+          },
+          "password": {
+            "maxLength": 20,
+            "minLength": 6,
+            "type": "string"
+          },
+          "email": {
+            "pattern": "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+            "type": "string",
+            "description": "must be unique",
+            "example": "example@example.dev"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h06.db.LoginSuccessViewModel": {
+        "required": [
+          "accessToken"
+        ],
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT access token"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h06.db.MeViewModel": {
+        "required": [
+          "email",
+          "login",
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "login": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h07.RegistrationConfirmationCodeModel": {
+        "required": [
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Code that be sent via Email inside link"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h07.RegistrationEmailResending": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "pattern": "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+            "type": "string",
+            "description": "Email of already registered but not confirmed user",
+            "example": "example@example.com"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h09.DeviceViewModel": {
+        "required": [
+          "deviceId",
+          "ip",
+          "lastActiveDate",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "ip": {
+            "type": "string",
+            "description": "IP address of device during signing in"
+          },
+          "title": {
+            "type": "string",
+            "description": "Device name: for example Chrome 105 (received by parsing http header \"user-agent\")"
+          },
+          "lastActiveDate": {
+            "type": "string",
+            "description": "Date of the last generating of refresh/access tokens"
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "Id of connected device session"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h10.NewPasswordRecoveryInputModel": {
+        "required": [
+          "newPassword",
+          "recoveryCode"
+        ],
+        "type": "object",
+        "properties": {
+          "newPassword": {
+            "maxLength": 20,
+            "minLength": 6,
+            "type": "string",
+            "description": "New password"
+          },
+          "recoveryCode": {
+            "type": "string",
+            "description": "New password"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h10.PasswordRecoveryInputModel": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "pattern": "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+            "type": "string",
+            "description": "Email of registered user",
+            "example": "useremail@company.com"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.AnswerInputModel": {
+        "required": [
+          "answer"
+        ],
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.AnswerStatuses": {
+        "enum": [
+          "Correct",
+          "Incorrect"
+        ],
+        "type": "string"
+      },
+      "h25.AnswerViewModel": {
+        "required": [
+          "questionId"
+        ],
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string"
+          },
+          "answerStatus": {
+            "$ref": "#/components/schemas/h25.AnswerStatuses"
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.GamePairViewModel": {
+        "required": [
+          "firstPlayerProgress",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id of pair"
+          },
+          "firstPlayerProgress": {
+            "$ref": "#/components/schemas/h25.GamePlayerProgressViewModel"
+          },
+          "secondPlayerProgress": {
+            "$ref": "#/components/schemas/h25.GamePlayerProgressViewModel"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/h25.QuestionViewModel"
+            },
+            "description": "Questions for both players (can be null if second player haven't connected yet)",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/h25.GameStatuses"
+          },
+          "pairCreatedDate": {
+            "type": "string",
+            "description": "Date when first player initialized the pair",
+            "format": "date-time"
+          },
+          "startGameDate": {
+            "type": "string",
+            "description": "Game starts immediately after second player connection to this pair",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finishGameDate": {
+            "type": "string",
+            "description": "Game finishes immediately after both players have answered all the questions",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.GamePlayerProgressViewModel": {
+        "required": [
+          "answers",
+          "player"
+        ],
+        "type": "object",
+        "properties": {
+          "answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/h25.AnswerViewModel"
+            }
+          },
+          "player": {
+            "$ref": "#/components/schemas/h25.PlayerViewModel"
+          },
+          "score": {
+            "type": "integer",
+            "description": "Player score",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.GameStatuses": {
+        "enum": [
+          "PendingSecondPlayer",
+          "Active",
+          "Finished"
+        ],
+        "type": "string"
+      },
+      "h25.PlayerViewModel": {
+        "required": [
+          "id",
+          "login"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "login": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h25.QuestionViewModel": {
+        "required": [
+          "body",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "Here is the question itself"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h26.MyStatisticViewModel": {
+        "type": "object",
+        "properties": {
+          "sumScore": {
+            "type": "integer",
+            "description": "Sum scores of all games",
+            "format": "int32"
+          },
+          "avgScores": {
+            "type": "number",
+            "description": "Average score of all games rounded to 2 decimal places",
+            "format": "double"
+          },
+          "gamesCount": {
+            "type": "integer",
+            "description": "All played games count",
+            "format": "int32"
+          },
+          "winsCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lossesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "drawsCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h27.TopGamePlayerViewModel": {
+        "type": "object",
+        "properties": {
+          "sumScore": {
+            "type": "integer",
+            "description": "Sum scores of all games",
+            "format": "int32"
+          },
+          "avgScores": {
+            "type": "number",
+            "description": "Average score of all games rounded to 2 decimal places",
+            "format": "double"
+          },
+          "gamesCount": {
+            "type": "integer",
+            "description": "All played games count",
+            "format": "int32"
+          },
+          "winsCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lossesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "drawsCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "player": {
+            "$ref": "#/components/schemas/h25.PlayerViewModel"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "description": "Enter JWT Bearer token **_only_**",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "basic": {
+        "type": "http",
+        "scheme": "basic"
+      },
+      "refreshToken": {
+        "type": "apiKey",
+        "description": "JWT refreshToken inside cookie. Must be correct, and must not expire",
+        "name": "refreshToken",
+        "in": "cookie"
+      }
+    }
+  }
+}
