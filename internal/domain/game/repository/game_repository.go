@@ -219,7 +219,7 @@ func (r *GameRepository) UpdateScoresAndFinish(ctx context.Context, g *models.Qu
 		    finished_at                 = $7
 		WHERE id = $1`
 
-	_, err := r.db.ExecContext(ctx, query,
+	res, err := r.db.ExecContext(ctx, query,
 		g.ID,
 		g.FirstPlayerScore,
 		g.SecondPlayerScore,
@@ -231,18 +231,34 @@ func (r *GameRepository) UpdateScoresAndFinish(ctx context.Context, g *models.Qu
 	if err != nil {
 		return fmt.Errorf("update game scores: %w", err)
 	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("update game scores rows affected: %w", err)
+	}
+	if affected == 0 {
+		return ErrGameNotFound
+	}
 	return nil
 }
 
 func (r *GameRepository) AssignQuestions(ctx context.Context, gameID pgtype.UUID, questionIDs []pgtype.UUID) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin assign questions transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
 	for i, qID := range questionIDs {
-		_, err := r.db.ExecContext(ctx,
+		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO quiz_game_questions (game_id, question_id, order_index) VALUES ($1, $2, $3)`,
 			gameID, qID, i,
-		)
-		if err != nil {
+		); err != nil {
 			return fmt.Errorf("assign question %d: %w", i, err)
 		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit assign questions transaction: %w", err)
 	}
 	return nil
 }
