@@ -8,15 +8,19 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/muzyk0/online-quiz-game/internal/pkg/apperrors"
 )
 
 // RateLimitConfig holds configuration for rate limiting
 type RateLimitConfig struct {
 	// Requests is the maximum number of requests allowed in the window
+	// (currently not used; see BurstSize for effective limit)
 	Requests int
 	// Window is the time window for rate limiting
 	Window time.Duration
-	// BurstSize allows temporary burst above the rate (must be >= Requests)
+	// BurstSize is the maximum number of requests allowed per window (including burst overflow).
+	// Currently serves as the effective rate limit; Requests parameter reserved for future
+	// token-bucket refinement separating sustained rate from burst capacity.
 	BurstSize int
 }
 
@@ -63,6 +67,7 @@ func NewAuthRateLimiterWithContext(ctx context.Context, config RateLimitConfig) 
 
 // Allow checks if the request from the given identifier should be allowed.
 // Returns true if allowed, false if rate limited.
+// Uses token bucket algorithm: Requests per Window, with BurstSize overflow capacity.
 func (rl *AuthRateLimiter) Allow(identifier string) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
@@ -79,7 +84,7 @@ func (rl *AuthRateLimiter) Allow(identifier string) bool {
 		return true
 	}
 
-	// Within existing window
+	// Within existing window: allow up to BurstSize (Requests + burst overflow)
 	if entry.count < rl.config.BurstSize {
 		entry.count++
 		return true
@@ -150,9 +155,8 @@ func AuthRateLimitMiddleware(limiter *AuthRateLimiter, identifierFunc func(echo.
 			identifier := identifierFunc(c)
 
 			if !limiter.Allow(identifier) {
-				return c.JSON(http.StatusTooManyRequests, map[string]string{
-					"error": "Too many requests. Please try again later.",
-				})
+				// Return error in standard API format (errorsMessages)
+				return apperrors.TooManyRequests("Too many requests. Please try again later.")
 			}
 
 			// Add rate limit headers

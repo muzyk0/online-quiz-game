@@ -14,5 +14,5 @@ type UpdateQuestionRequest struct {
 
 // PublishQuestionRequest is the SA request body to publish/unpublish a question.
 type PublishQuestionRequest struct {
-	Published bool `json:"published"`
+	Published *bool `json:"published" validate:"required"`
 }

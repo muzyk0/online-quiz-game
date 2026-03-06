@@ -119,12 +119,22 @@ func GetUserFromContext(c echo.Context) (userID, email, userType string, err err
 		return "", "", "", errors.New("invalid user ID in context")
 	}
 
+	// Validate email type if present
 	if emailVal != nil {
-		email, _ = emailVal.(string)
+		var ok bool
+		email, ok = emailVal.(string)
+		if !ok {
+			return "", "", "", errors.New("invalid email type in context")
+		}
 	}
 
+	// Validate user_type type if present, otherwise default to "user"
 	if userTypeVal != nil {
-		userType, _ = userTypeVal.(string)
+		var ok bool
+		userType, ok = userTypeVal.(string)
+		if !ok {
+			return "", "", "", errors.New("invalid user type in context")
+		}
 	} else {
 		userType = "user" // Default to regular user
 	}

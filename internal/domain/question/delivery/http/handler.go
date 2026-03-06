@@ -164,14 +164,28 @@ func (h *Handler) PublishQuestion(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		var typeErr *json.UnmarshalTypeError
 		if errors.As(err, &typeErr) {
+			field := typeErr.Field
+			if field == "" {
+				field = "published" // For top-level JSON type errors
+			}
 			return apperrors.NewValidationError(map[string]string{
-				typeErr.Field: "must be a boolean",
+				field: "must be a boolean",
 			})
 		}
 		return apperrors.BadRequest("Invalid request body")
 	}
 
-	_, err := h.svc.PublishQuestion(c.Request().Context(), id, req.Published)
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
+	if req.Published == nil {
+		return apperrors.NewValidationError(map[string]string{
+			"published": "field is required",
+		})
+	}
+
+	_, err := h.svc.PublishQuestion(c.Request().Context(), id, *req.Published)
 	if err != nil {
 		return mapQuestionError(err)
 	}
