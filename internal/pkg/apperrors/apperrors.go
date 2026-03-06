@@ -68,30 +68,20 @@ func (e *AppError) Unwrap() error {
 // Wrap attaches an underlying cause and returns a new AppError.
 // The original is not mutated.
 func (e *AppError) Wrap(err error) *AppError {
-	// Copy Details to prevent shared mutable state
-	details := make(map[string]string)
-	for k, v := range e.Details {
-		details[k] = v
-	}
 	return &AppError{
 		Code:    e.Code,
 		Message: e.Message,
-		Details: details,
+		Details: e.Details,
 		Err:     err,
 	}
 }
 
 // WithMessage returns a copy with a different client message.
 func (e *AppError) WithMessage(msg string) *AppError {
-	// Copy Details to prevent shared mutable state
-	details := make(map[string]string)
-	for k, v := range e.Details {
-		details[k] = v
-	}
 	return &AppError{
 		Code:    e.Code,
 		Message: msg,
-		Details: details,
+		Details: e.Details,
 		Err:     e.Err,
 	}
 }
@@ -145,14 +135,9 @@ func BadGateway(message string) *AppError {
 
 // NewValidationError creates a 400 error with field-level details.
 func NewValidationError(details map[string]string) *AppError {
-	// Copy Details to prevent external mutations
-	detailsCopy := make(map[string]string)
-	for k, v := range details {
-		detailsCopy[k] = v
-	}
 	return &AppError{
 		Code:    http.StatusBadRequest,
 		Message: "Validation failed",
-		Details: detailsCopy,
+		Details: details,
 	}
 }

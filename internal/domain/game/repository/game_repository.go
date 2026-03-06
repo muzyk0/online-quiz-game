@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/muzyk0/online-quiz-game/internal/app/database"
@@ -222,7 +221,7 @@ func (r *GameRepository) UpdateScoresAndFinish(ctx context.Context, g *models.Qu
 		    finished_at                 = $7
 		WHERE id = $1`
 
-	result, err := r.db.ExecContext(ctx, query,
+	_, err := r.db.ExecContext(ctx, query,
 		g.ID,
 		g.FirstPlayerScore,
 		g.SecondPlayerScore,
@@ -233,11 +232,6 @@ func (r *GameRepository) UpdateScoresAndFinish(ctx context.Context, g *models.Qu
 	)
 	if err != nil {
 		return fmt.Errorf("update game scores: %w", err)
-	}
-
-	// Verify that exactly one row was updated (game exists)
-	if result.RowsAffected() == 0 {
-		return ErrGameNotFound
 	}
 	return nil
 }
@@ -292,11 +286,6 @@ func (r *GameRepository) SaveAnswer(ctx context.Context, a models.QuizGameAnswer
 
 	var out models.QuizGameAnswer
 	if err := r.db.GetContext(ctx, &out, query, a.GameID, a.PlayerID, a.QuestionID, a.Answer, a.IsCorrect); err != nil {
-		// Detect UNIQUE constraint violation (duplicate answer for same question in game)
-		var pgErr *pgx.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique_violation
-			return nil, ErrAnswerDuplicate
-		}
 		return nil, fmt.Errorf("save answer: %w", err)
 	}
 	return &out, nil
