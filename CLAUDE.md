@@ -118,11 +118,17 @@ All handlers return `*apperrors.AppError` values. The centralized handler in `mi
 {"errorsMessages": [{"message": "...", "field": "..."}]}
 ```
 
-Never return raw `error` or `echo.HTTPError` to the Echo handler chain — always use `apperrors.*` constructors. `CustomHTTPErrorHandler` is the single exit point that serializes every error to the wire format.
+Each layer has its own error vocabulary — `apperrors` is **only imported in `delivery/http`**:
 
-Services and repositories return plain `error` (wrapped with `fmt.Errorf`); handlers convert them to `*apperrors.AppError` before returning.
+| Layer | Returns | Example |
+|-------|---------|---------|
+| Repository | sentinel / wrapped `error` | `ErrAnswerDuplicate`, `fmt.Errorf("save: %w", err)` |
+| Service | domain sentinel `error` | `ErrGameNotActive`, `ErrAlreadyInGame` |
+| Handler | `*apperrors.AppError` | `apperrors.Forbidden("...")` |
 
-This means unit tests for anything in the Echo chain must assert via `require.ErrorAs(t, err, &appErr)` rather than checking `rec.Code` — the error is returned, not written to the response directly.
+Each domain has a `delivery/http/errors.go` with a `mapXxxError(err error) error` function that translates domain sentinels to `*apperrors.AppError`. Unrecognised errors fall through to `apperrors.Internal(...)`.
+
+`CustomHTTPErrorHandler` is the single exit point that serializes every `*apperrors.AppError` to the wire format. Never call `c.JSON` for errors and never return raw `error` or `echo.HTTPError` from the handler chain.
 
 When `c.Bind(&req)` fails due to a JSON type mismatch (e.g. string sent for a bool field), detect `*json.UnmarshalTypeError` to return a field-specific error:
 
