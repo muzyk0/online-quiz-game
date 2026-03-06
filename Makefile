@@ -44,15 +44,14 @@ test-e2e-simple: ## Run e2e tests (requires DATABASE_URL)
 
 .PHONY: test-e2e
 test-e2e: ## Run e2e tests with race detection, coverage and summary (requires DATABASE_URL)
-	@E2E_OUT=$$(mktemp /tmp/e2e_out.XXXXXX.txt); \
-	go test -tags e2e -race -count=1 -v -timeout 120s \
+	@go test -tags e2e -race -count=1 -v -timeout 120s \
 		-coverprofile=e2e_coverage.out \
 		-coverpkg=./internal/... \
-		./test/e2e/ 2>&1 | tee $$E2E_OUT; \
+		./test/e2e/ 2>&1 | tee /tmp/.e2e_out.txt; \
 	STATUS=$${PIPESTATUS[0]}; \
-	PASS=$$(awk '/--- PASS/{c++} END{print c+0}' $$E2E_OUT); \
-	FAIL=$$(awk '/--- FAIL/{c++} END{print c+0}' $$E2E_OUT); \
-	RACE=$$(awk '/DATA RACE/{c++} END{print c+0}' $$E2E_OUT); \
+	PASS=$$(awk '/--- PASS/{c++} END{print c+0}' /tmp/.e2e_out.txt); \
+	FAIL=$$(awk '/--- FAIL/{c++} END{print c+0}' /tmp/.e2e_out.txt); \
+	RACE=$$(awk '/DATA RACE/{c++} END{print c+0}' /tmp/.e2e_out.txt); \
 	echo ""; \
 	printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'; \
 	printf '  Total %-3d   Pass %-3d   Fail %-3d' $$((PASS+FAIL)) $$PASS $$FAIL; \
@@ -60,7 +59,7 @@ test-e2e: ## Run e2e tests with race detection, coverage and summary (requires D
 	[ -f e2e_coverage.out ] && \
 		go tool cover -func=e2e_coverage.out | tail -1 | awk '{printf "  Coverage: %s\n", $$NF}'; \
 	printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'; \
-	rm -f $$E2E_OUT; \
+	rm -f /tmp/.e2e_out.txt; \
 	exit $$STATUS
 
 .PHONY: lint
