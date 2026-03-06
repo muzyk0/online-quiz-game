@@ -47,24 +47,15 @@ func New(cfg *config.Config, validator echo.Validator) *Server {
 	}
 }
 
-// Start starts the HTTP server and blocks until shutdown
+// Start starts the HTTP server and blocks until shutdown or error.
 func (s *Server) Start() error {
 	port := fmt.Sprintf(":%d", s.cfg.ServerPort)
 	log.Printf("Server is starting on port %s", port)
 
-	serverErrors := make(chan error, 1)
-	go func() {
-		if err := s.Echo.Start(port); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			serverErrors <- err
-		}
-	}()
-
-	select {
-	case err := <-serverErrors:
+	if err := s.Echo.Start(port); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("server failed to start: %w", err)
-	default:
-		return nil
 	}
+	return nil
 }
 
 // Shutdown gracefully shuts down the server
