@@ -118,9 +118,11 @@ All handlers return `*apperrors.AppError` values. The centralized handler in `mi
 {"errorsMessages": [{"message": "...", "field": "..."}]}
 ```
 
-Never return raw `error` or `echo.HTTPError` from handlers **or middleware** — always use `apperrors.*` constructors. This applies universally: domain handlers, auth middleware, rate limiter, CORS, etc. `CustomHTTPErrorHandler` is the single exit point that serializes every error to the wire format.
+Never return raw `error` or `echo.HTTPError` to the Echo handler chain — always use `apperrors.*` constructors. `CustomHTTPErrorHandler` is the single exit point that serializes every error to the wire format.
 
-This means middleware tests must assert via `require.ErrorAs(t, err, &appErr)` rather than checking `rec.Code` — the error is returned, not written to the response directly.
+Services and repositories return plain `error` (wrapped with `fmt.Errorf`); handlers convert them to `*apperrors.AppError` before returning.
+
+This means unit tests for anything in the Echo chain must assert via `require.ErrorAs(t, err, &appErr)` rather than checking `rec.Code` — the error is returned, not written to the response directly.
 
 When `c.Bind(&req)` fails due to a JSON type mismatch (e.g. string sent for a bool field), detect `*json.UnmarshalTypeError` to return a field-specific error:
 

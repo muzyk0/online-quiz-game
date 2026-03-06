@@ -80,9 +80,11 @@ if database.IsUniqueViolation(err) {
 
 The helper wraps `pgconn.PgError` + SQLSTATE `23505` so repositories don't need to import `pgconn` directly.
 
-### All handlers and middleware return AppError — never write directly
+### Nothing in the Echo chain writes errors directly
 
-Every handler and middleware in this project returns `*apperrors.AppError` instead of writing to the response via `c.JSON`. `CustomHTTPErrorHandler` is the single exit point that serializes errors to the wire format.
+Everything that returns to the Echo handler chain must return `*apperrors.AppError` — never `c.JSON`, never raw `error`, never `echo.HTTPError`. `CustomHTTPErrorHandler` is the single exit point that serializes errors to the wire format.
+
+Services and repositories return plain `error`; handlers convert them to `*apperrors.AppError` before returning.
 
 This means unit tests for middleware must assert via `require.ErrorAs`, not by checking `rec.Code`:
 
